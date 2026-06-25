@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tournament Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/dashboard" class="brand">🏆 Zef Tournaments</a>
+    <form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form>
+  </header>
+
+  <main class="container">
+    <% if (flash) { %>
+      <div class="flash <%= flash.type %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="hero">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="muted">Edit tournaments created by the Discord bot or create one manually.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Create tournament manually</h2>
+      <form method="post" action="/tournaments" class="grid-form">
+        <label>
+          Name
+          <input name="name" required maxlength="100" placeholder="Friday Roblox Cup">
+        </label>
+        <label>
+          Max players
+          <input name="max_participants" type="number" min="2" max="256" placeholder="32">
+        </label>
+        <label>
+          Region
+          <input name="default_region" maxlength="50" placeholder="EU / NA / ASIA">
+        </label>
+        <label class="full">
+          Description
+          <textarea name="description" rows="3" maxlength="1000" placeholder="Tournament info shown in Discord."></textarea>
+        </label>
+        <button class="primary" type="submit">Create</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <h2>Tournaments</h2>
+        <span class="pill"><%= tournaments.length %> total</span>
+      </div>
+
+      <% if (tournaments.length === 0) { %>
+        <p class="empty">No tournaments yet. Create one with `/tournament create` in Discord or use the form above.</p>
+      <% } else { %>
+        <div class="cards">
+          <% tournaments.forEach((tournament) => { %>
+            <a class="tournament-card" href="/tournaments/<%= tournament.id %>">
+              <div>
+                <h3><%= tournament.name %></h3>
+                <p><%= tournament.description || 'No description.' %></p>
+              </div>
+              <div class="card-meta">
+                <span>Status: <strong><%= tournament.status %></strong></span>
+                <span>Players: <strong><%= tournament.participant_count %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %></strong></span>
+                <span>Matches: <strong><%= tournament.match_count %></strong></span>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= tournament.name %> - Tournament Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/dashboard" class="brand">🏆 Zef Tournaments</a>
+    <form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form>
+  </header>
+
+  <main class="container wide">
+    <% if (flash) { %>
+      <div class="flash <%= flash.type %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="hero split">
+      <div>
+        <a href="/dashboard" class="backlink">← Back to dashboard</a>
+        <h1><%= tournament.name %></h1>
+        <p class="muted">Tournament ID <%= tournament.id %> · <%= participants.length %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %> players</p>
+      </div>
+      <div class="hero-actions">
+        <form method="post" action="/tournaments/<%= tournament.id %>/regenerate-bracket" onsubmit="return confirm('This deletes the current bracket and creates a new one from the current participants. Continue?')">
+          <button class="primary" type="submit">Regenerate bracket</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Details</h2>
+      <form method="post" action="/tournaments/<%= tournament.id %>/details" class="grid-form">
+        <label>
+          Name
+          <input name="name" value="<%= tournament.name %>" required maxlength="100">
+        </label>
+        <label>
+          Status
+          <select name="status">
+            <% ['signup', 'open', 'running', 'completed', 'cancelled'].forEach((status) => { %>
+              <option value="<%= status %>" <%= tournament.status === status ? 'selected' : '' %>><%= status %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Max players
+          <input name="max_participants" type="number" min="2" max="256" value="<%= tournament.max_participants || '' %>">
+        </label>
+        <label>
+          Default region
+          <input name="default_region" value="<%= tournament.default_region || '' %>" maxlength="50">
+        </label>
+        <label class="full">
+          Description
+          <textarea name="description" rows="4" maxlength="1000"><%= tournament.description || '' %></textarea>
+        </label>
+        <button class="primary" type="submit">Save details</button>
+      </form>
+    </section>
+
+    <section class="panel" id="participants">
+      <div class="section-title">
+        <h2>Participants</h2>
+        <span class="pill"><%= participants.length %> players</span>
+      </div>
+
+      <form method="post" action="/tournaments/<%= tournament.id %>/participants" class="grid-form compact">
+        <label>
+          Roblox username
+          <input name="roblox_username" maxlength="50" placeholder="Roblox name" required>
+        </label>
+        <label>
+          Discord username
+          <input name="discord_username" maxlength="80" placeholder="Discord name" required>
+        </label>
+        <label>
+          Discord ID
+          <input name="discord_id" maxlength="80" placeholder="Optional, auto manual if empty">
+        </label>
+        <label>
+          Region
+          <input name="region" maxlength="50" placeholder="EU">
+        </label>
+        <label>
+          Seed
+          <input name="seed" type="number" min="1" placeholder="1">
+        </label>
+        <button class="primary" type="submit">Add player</button>
+      </form>
+
+      <% if (participants.length === 0) { %>
+        <p class="empty">No players yet. Players can join from Discord using the Join button.</p>
+      <% } else { %>
+        <div class="participant-list">
+          <% participants.forEach((participant) => { %>
+            <div class="participant-row">
+              <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>" class="participant-form">
+                <input name="roblox_username" value="<%= participant.roblox_username %>" maxlength="50" required>
+                <input name="discord_username" value="<%= participant.discord_username %>" maxlength="80" required>
+                <input name="region" value="<%= participant.region %>" maxlength="50" placeholder="Region">
+                <input name="seed" value="<%= participant.seed || '' %>" type="number" min="1" placeholder="Seed">
+                <button type="submit">Save</button>
+              </form>
+              <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>/delete" onsubmit="return confirm('Delete this participant?')">
+                <button class="danger" type="submit">Delete</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="panel" id="bracket">
+      <div class="section-title">
+        <h2>Bracket</h2>
+        <span class="pill"><%= matches.length %> matches</span>
+      </div>
+
+      <% if (matches.length === 0) { %>
+        <p class="empty">No bracket generated yet. Add at least 2 participants, then click <strong>Regenerate bracket</strong>.</p>
+      <% } else { %>
+        <div class="bracket">
+          <% Object.keys(rounds).sort((a, b) => Number(a) - Number(b)).forEach((roundNumber) => { %>
+            <div class="round">
+              <h3>Round <%= roundNumber %></h3>
+              <% rounds[roundNumber].forEach((match) => { %>
+                <form class="match-card" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
+                  <div class="match-head">
+                    <strong>Match <%= match.match_number %></strong>
+                    <span class="status <%= match.status %>"><%= match.status %></span>
+                  </div>
+
+                  <div class="match-player">
+                    <label>
+                      Player 1
+                      <select name="player1_participant_id">
+                        <option value="">Custom / empty</option>
+                        <% participants.forEach((participant) => { %>
+                          <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %> (<%= participant.discord_username %>)</option>
+                        <% }) %>
+                      </select>
+                    </label>
+                    <input name="player1_name" value="<%= match.player1_name || '' %>" placeholder="Custom name">
+                    <input name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="Score">
+                  </div>
+
+                  <div class="versus">VS</div>
+
+                  <div class="match-player">
+                    <label>
+                      Player 2
+                      <select name="player2_participant_id">
+                        <option value="">Custom / empty</option>
+                        <% participants.forEach((participant) => { %>
+                          <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %> (<%= participant.discord_username %>)</option>
+                        <% }) %>
+                      </select>
+                    </label>
+                    <input name="player2_name" value="<%= match.player2_name || '' %>" placeholder="Custom name">
+                    <input name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="Score">
+                  </div>
+
+                  <label>
+                    Winner
+                    <select name="winner_slot">
+                      <option value="" <%= !match.winner_participant_id ? 'selected' : '' %>>No winner yet</option>
+                      <option value="p1" <%= match.winner_participant_id && match.winner_participant_id === match.player1_participant_id ? 'selected' : '' %>>Player 1 wins</option>
+                      <option value="p2" <%= match.winner_participant_id && match.winner_participant_id === match.player2_participant_id ? 'selected' : '' %>>Player 2 wins</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Status
+                    <select name="status">
+                      <% ['pending', 'running', 'completed'].forEach((status) => { %>
+                        <option value="<%= status %>" <%= match.status === status ? 'selected' : '' %>><%= status %></option>
+                      <% }) %>
+                    </select>
+                  </label>
+
+                  <% if (match.winner_label) { %>
+                    <p class="winner">Winner: <strong><%= match.winner_label %></strong></p>
+                  <% } %>
+
+                  <button type="submit">Save match</button>
+                </form>
+              <% }) %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

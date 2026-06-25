@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zef Tournament Dashboard - Login</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="auth-page">
+  <main class="login-card">
+    <div class="logo">🏆</div>
+    <h1>Zef Tournament Dashboard</h1>
+    <p class="muted">Login to manage tournaments, players, brackets, scores, and winners.</p>
+
+    <% if (flash) { %>
+      <div class="flash <%= flash.type %>"><%= flash.message %></div>
+    <% } %>
+
+    <form method="post" action="/login" class="stack">
+      <label>
+        Username
+        <input type="text" name="username" autocomplete="username" required autofocus>
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="primary" type="submit">Login</button>
+    </form>
+  </main>
+</body>
+</html>
