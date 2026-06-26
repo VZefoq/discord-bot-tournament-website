@@ -55,7 +55,7 @@
       <div class="stat-card">
         <span>Progress</span>
         <strong><%= stats.progress %>%</strong>
-        <div class="progress"><i style="width:<%= stats.progress %>%"></i></div>
+        <div class="progress" style="--progress:<%= stats.progress %>%"><i></i></div>
       </div>
       <% if (stats.champion) { %>
         <div class="stat-card champion-card">
