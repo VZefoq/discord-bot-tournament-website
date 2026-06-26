@@ -66,3 +66,16 @@ COOKIE_SECURE=false
 ```
 
 If your login cookie does not save behind HTTPS, try setting `COOKIE_SECURE=true`.
+
+## Visual bracket update
+
+The tournament page now uses a mirrored single-elimination bracket layout:
+
+- left side rounds flow toward the center
+- right side rounds flow toward the center
+- final match is centered
+- each match stays editable through the compact edit panel
+- scores can be entered directly on the bracket cards
+- choosing a winner still auto-advances that player to the next round
+
+If Coolify fails on `npm ci`, make sure `package-lock.json` from this zip is committed to GitHub too.

@@ -1,0 +1,62 @@
+<form class="visual-match visual-match-<%= side %> <%= match.status %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
+  <div class="visual-match-meta">
+    <span>Match <%= match.match_number %></span>
+    <span class="status <%= match.status %>"><%= match.status %></span>
+  </div>
+
+  <div class="visual-slot <%= match.winner_participant_id && match.winner_participant_id === match.player1_participant_id ? 'winner-slot' : '' %>">
+    <select name="player1_participant_id" aria-label="Player 1">
+      <option value="">TBD / custom</option>
+      <% participants.forEach((participant) => { %>
+        <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %></option>
+      <% }) %>
+    </select>
+    <input class="score-input" name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="0" aria-label="Player 1 score">
+  </div>
+
+  <div class="visual-slot <%= match.winner_participant_id && match.winner_participant_id === match.player2_participant_id ? 'winner-slot' : '' %>">
+    <select name="player2_participant_id" aria-label="Player 2">
+      <option value="">TBD / custom</option>
+      <% participants.forEach((participant) => { %>
+        <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %></option>
+      <% }) %>
+    </select>
+    <input class="score-input" name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="0" aria-label="Player 2 score">
+  </div>
+
+  <details class="visual-match-edit">
+    <summary>Edit match</summary>
+    <div class="match-edit-grid">
+      <label>
+        Player 1 custom name
+        <input name="player1_name" value="<%= match.player1_name || '' %>" placeholder="Custom / empty">
+      </label>
+      <label>
+        Player 2 custom name
+        <input name="player2_name" value="<%= match.player2_name || '' %>" placeholder="Custom / empty">
+      </label>
+      <label>
+        Winner
+        <select name="winner_slot">
+          <option value="" <%= !match.winner_participant_id ? 'selected' : '' %>>No winner yet</option>
+          <option value="p1" <%= match.winner_participant_id && match.winner_participant_id === match.player1_participant_id ? 'selected' : '' %>>Player 1 wins</option>
+          <option value="p2" <%= match.winner_participant_id && match.winner_participant_id === match.player2_participant_id ? 'selected' : '' %>>Player 2 wins</option>
+        </select>
+      </label>
+      <label>
+        Status
+        <select name="status">
+          <% ['pending', 'running', 'completed'].forEach((status) => { %>
+            <option value="<%= status %>" <%= match.status === status ? 'selected' : '' %>><%= status %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+  </details>
+
+  <% if (match.winner_label) { %>
+    <p class="visual-winner">Winner: <%= match.winner_label %></p>
+  <% } %>
+
+  <button class="save-match" type="submit">Save</button>
+</form>

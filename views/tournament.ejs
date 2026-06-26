@@ -113,7 +113,7 @@
       <% } %>
     </section>
 
-    <section class="panel" id="bracket">
+    <section class="panel bracket-panel" id="bracket">
       <div class="section-title">
         <h2>Bracket</h2>
         <span class="pill"><%= matches.length %> matches</span>
@@ -122,74 +122,68 @@
       <% if (matches.length === 0) { %>
         <p class="empty">No bracket generated yet. Add at least 2 participants, then click <strong>Regenerate bracket</strong>.</p>
       <% } else { %>
-        <div class="bracket">
-          <% Object.keys(rounds).sort((a, b) => Number(a) - Number(b)).forEach((roundNumber) => { %>
-            <div class="round">
-              <h3>Round <%= roundNumber %></h3>
-              <% rounds[roundNumber].forEach((match) => { %>
-                <form class="match-card" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
-                  <div class="match-head">
-                    <strong>Match <%= match.match_number %></strong>
-                    <span class="status <%= match.status %>"><%= match.status %></span>
-                  </div>
+        <%
+          const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
+          const finalRound = roundNumbers[roundNumbers.length - 1];
+          const sideRounds = roundNumbers.filter((roundNumber) => roundNumber < finalRound);
+          const leftRounds = sideRounds;
+          const rightRounds = [...sideRounds].reverse();
+          const splitRound = (roundNumber, side) => {
+            const list = rounds[roundNumber] || [];
+            const mid = Math.ceil(list.length / 2);
+            return side === 'left' ? list.slice(0, mid) : list.slice(mid);
+          };
+          const roundLabel = (roundNumber) => {
+            if (roundNumber === finalRound) return 'Final';
+            if (roundNumber === finalRound - 1) return 'Semi final';
+            if (roundNumber === finalRound - 2) return 'Quarter final';
+            return `Round ${roundNumber}`;
+          };
+          const champion = matches.find((match) => match.round_number === finalRound && match.winner_label)?.winner_label;
+        %>
 
-                  <div class="match-player">
-                    <label>
-                      Player 1
-                      <select name="player1_participant_id">
-                        <option value="">Custom / empty</option>
-                        <% participants.forEach((participant) => { %>
-                          <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %> (<%= participant.discord_username %>)</option>
-                        <% }) %>
-                      </select>
-                    </label>
-                    <input name="player1_name" value="<%= match.player1_name || '' %>" placeholder="Custom name">
-                    <input name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="Score">
-                  </div>
+        <div class="bracket-toolbar">
+          <span class="muted">Visual single-elimination bracket. Use the small edit panels inside each match to change players, scores, winner, or status.</span>
+          <% if (champion) { %>
+            <span class="champion-pill">Champion: <strong><%= champion %></strong></span>
+          <% } %>
+        </div>
 
-                  <div class="versus">VS</div>
+        <div class="playoff-bracket" style="--left-rounds:<%= leftRounds.length || 1 %>; --right-rounds:<%= rightRounds.length || 1 %>;">
+          <div class="bracket-side bracket-left">
+            <% leftRounds.forEach((roundNumber, index) => { %>
+              <% const roundMatches = splitRound(roundNumber, 'left'); %>
+              <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
+                <h3><%= roundLabel(roundNumber) %></h3>
+                <div class="visual-round-stack">
+                  <% roundMatches.forEach((match) => { %>
+                    <%- include('partials/bracket-match', { match, tournament, participants, side: 'left' }) %>
+                  <% }) %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
 
-                  <div class="match-player">
-                    <label>
-                      Player 2
-                      <select name="player2_participant_id">
-                        <option value="">Custom / empty</option>
-                        <% participants.forEach((participant) => { %>
-                          <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.roblox_username %> (<%= participant.discord_username %>)</option>
-                        <% }) %>
-                      </select>
-                    </label>
-                    <input name="player2_name" value="<%= match.player2_name || '' %>" placeholder="Custom name">
-                    <input name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="Score">
-                  </div>
+          <div class="bracket-final-column">
+            <div class="bracket-title-line"></div>
+            <% (rounds[finalRound] || []).forEach((match) => { %>
+              <%- include('partials/bracket-match', { match, tournament, participants, side: 'final' }) %>
+            <% }) %>
+          </div>
 
-                  <label>
-                    Winner
-                    <select name="winner_slot">
-                      <option value="" <%= !match.winner_participant_id ? 'selected' : '' %>>No winner yet</option>
-                      <option value="p1" <%= match.winner_participant_id && match.winner_participant_id === match.player1_participant_id ? 'selected' : '' %>>Player 1 wins</option>
-                      <option value="p2" <%= match.winner_participant_id && match.winner_participant_id === match.player2_participant_id ? 'selected' : '' %>>Player 2 wins</option>
-                    </select>
-                  </label>
-
-                  <label>
-                    Status
-                    <select name="status">
-                      <% ['pending', 'running', 'completed'].forEach((status) => { %>
-                        <option value="<%= status %>" <%= match.status === status ? 'selected' : '' %>><%= status %></option>
-                      <% }) %>
-                    </select>
-                  </label>
-
-                  <% if (match.winner_label) { %>
-                    <p class="winner">Winner: <strong><%= match.winner_label %></strong></p>
-                  <% } %>
-
-                  <button type="submit">Save match</button>
-                </form>
-              <% }) %>
-            </div>
-          <% }) %>
+          <div class="bracket-side bracket-right">
+            <% rightRounds.forEach((roundNumber, index) => { %>
+              <% const roundMatches = splitRound(roundNumber, 'right'); %>
+              <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
+                <h3><%= roundLabel(roundNumber) %></h3>
+                <div class="visual-round-stack">
+                  <% roundMatches.forEach((match) => { %>
+                    <%- include('partials/bracket-match', { match, tournament, participants, side: 'right' }) %>
+                  <% }) %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
         </div>
       <% } %>
     </section>
