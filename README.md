@@ -1,81 +1,73 @@
 # Zef Tournament Dashboard
 
-A simple admin website for tournaments created by the Discord bot.
-
-## Features
-
-- Login with username/password
-- View tournaments created by the bot
-- Edit tournament name, description, status, max players, and region
-- View and edit participants
-- Add manual participants
-- Automatically generate a single-elimination bracket from participants
-- Edit bracket player slots
-- Fill in scores
-- Pick winner/loser
-- Winner automatically moves to the next round
+A Coolify-ready Node.js dashboard for the Discord bot tournament system.
 
 ## Login
 
-Default login:
+Default local/admin login:
 
-```text
-user: admin
-password: Poep123@@
-```
+- Username: `admin`
+- Password: `Poep123@@`
 
-For hosting, set these environment variables instead of editing code:
+Change these in Coolify environment variables before production if needed.
 
-```text
+## Challonge-style features
+
+- Single-elimination tournament dashboard
+- Discord bot signups appear as participants
+- Manual participant add/edit/delete
+- Seeds like Challonge
+- Auto seed button
+- Shuffle seed button
+- Start/rebuild bracket from current seeds
+- Seeded bracket placement so seed 1 and seed 2 are on opposite sides
+- Auto byes for uneven player counts
+- Visual mirrored bracket
+- Report scores directly on match cards
+- Click the ✓ button to mark a player as winner
+- Winner automatically moves into the next round
+- Undo result clears invalid future rounds
+- Reset all results without deleting players
+- Delete only the bracket while keeping participants
+- Tournament progress and champion display
+
+## Coolify setup
+
+Create a PostgreSQL resource in Coolify and copy its **Postgres URL (internal)**.
+
+Environment variables for the dashboard app:
+
+```env
+PORT=3000
+DATABASE_URL=postgresql://USER:PASSWORD@YOUR_INTERNAL_POSTGRES_HOST:5432/postgres
+DATABASE_SSL=false
 ADMIN_USER=admin
 ADMIN_PASSWORD=Poep123@@
-SESSION_SECRET=use-a-long-random-secret
-DATABASE_URL=your-coolify-postgresql-internal-url
-DATABASE_SSL=false
-PORT=3000
+SESSION_SECRET=make-this-a-long-random-secret
+COOKIE_SECURE=false
 ```
 
-## Local run
+Coolify configuration:
+
+- Build Pack: `Nixpacks`
+- Install Command: leave empty or `npm ci`
+- Start Command: `npm start`
+- Ports Exposes: `3000`
+- Static site: off
+
+If Coolify says `npm ci can only install packages when package.json and package-lock.json are in sync`, run locally:
+
+```bash
+npm install
+git add package.json package-lock.json
+git commit -m "Update lockfile"
+git push
+```
+
+## Local development
 
 ```bash
 npm install
 cp .env.example .env
 npm start
 ```
-
-Open `http://localhost:3000`.
-
-## Database
-
-The app creates the tables automatically on startup. `schema.sql` is also included if you want to run it manually.
-
-## Coolify notes
-
-Use this as a normal Node.js app. Coolify can build it with Nixpacks or the included Dockerfile.
-
-Recommended app environment variables:
-
-```text
-PORT=3000
-DATABASE_URL=<internal PostgreSQL connection string from Coolify>
-DATABASE_SSL=false
-ADMIN_USER=admin
-ADMIN_PASSWORD=Poep123@@
-SESSION_SECRET=<generate a long random secret>
-COOKIE_SECURE=false
-```
-
-If your login cookie does not save behind HTTPS, try setting `COOKIE_SECURE=true`.
-
-## Visual bracket update
-
-The tournament page now uses a mirrored single-elimination bracket layout:
-
-- left side rounds flow toward the center
-- right side rounds flow toward the center
-- final match is centered
-- each match stays editable through the compact edit panel
-- scores can be entered directly on the bracket cards
-- choosing a winner still auto-advances that player to the next round
-
-If Coolify fails on `npm ci`, make sure `package-lock.json` from this zip is committed to GitHub too.
