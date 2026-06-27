@@ -210,6 +210,25 @@ label {
   font-weight: 800;
 }
 
+.pill[data-mode="saving"],
+.pill[data-mode="editing"] {
+  color: #f5df9c;
+  border-color: rgba(201, 169, 96, 0.45);
+  background: rgba(201, 169, 96, 0.12);
+}
+
+.pill[data-mode="saved"] {
+  color: #b9f5ce;
+  border-color: rgba(95, 191, 136, 0.45);
+  background: rgba(95, 191, 136, 0.12);
+}
+
+.pill[data-mode="error"] {
+  color: #ffd1dc;
+  border-color: rgba(216, 95, 115, 0.45);
+  background: rgba(216, 95, 115, 0.12);
+}
+
 .flash {
   margin-bottom: 1rem;
   border-radius: 16px;

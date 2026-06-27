@@ -150,6 +150,16 @@ async function loadTournament(id) {
 
 async function touchTournament(tournamentId) {
   await query('UPDATE tournaments SET updated_at = NOW() WHERE id = $1', [tournamentId]);
+  await notifyTournamentUpdated(tournamentId);
+}
+
+async function notifyTournamentUpdated(tournamentId) {
+  if (!tournamentId) return;
+  await query("SELECT pg_notify('tournament_updated', $1)", [String(tournamentId)]);
+}
+
+function wantsJson(req) {
+  return req.xhr || String(req.get('accept') || '').includes('application/json');
 }
 
 async function loadParticipants(tournamentId) {
@@ -540,9 +550,22 @@ app.post('/tournaments/:id/details', requireAuth, async (req, res, next) => {
         tournamentId,
       ],
     );
+
+    await notifyTournamentUpdated(tournamentId);
+
+    if (wantsJson(req)) {
+      res.json({ ok: true, tournamentId });
+      return;
+    }
+
     flash(req, 'success', 'Tournament details saved.');
     res.redirect(`/tournaments/${tournamentId}`);
   } catch (error) {
+    if (wantsJson(req)) {
+      res.status(500).json({ ok: false, message: error.message || 'Could not save tournament details.' });
+      return;
+    }
+
     next(error);
   }
 });
@@ -634,6 +657,7 @@ app.post('/tournaments/:id/seed-sequential', requireAuth, async (req, res, next)
         ]);
       }
     });
+    await touchTournament(tournamentId);
     flash(req, 'success', 'Seeds updated from 1 to ' + participants.length + '.');
     res.redirect(`/tournaments/${tournamentId}#participants`);
   } catch (error) {
@@ -660,6 +684,7 @@ app.post('/tournaments/:id/shuffle-seeds', requireAuth, async (req, res, next) =
         ]);
       }
     });
+    await touchTournament(tournamentId);
 
     flash(req, 'success', 'Seeds randomized. Rebuild/start the bracket to apply them.');
     res.redirect(`/tournaments/${tournamentId}#participants`);
@@ -673,6 +698,7 @@ app.post('/tournaments/:id/start', requireAuth, async (req, res, next) => {
 
   try {
     await regenerateBracket(tournamentId, 'running');
+    await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'Tournament started with a Challonge-style seeded bracket.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);
   } catch (error) {
@@ -686,6 +712,7 @@ app.post('/tournaments/:id/regenerate-bracket', requireAuth, async (req, res) =>
 
   try {
     await regenerateBracket(tournamentId, 'running');
+    await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'Bracket rebuilt from the current players and seeds.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);
   } catch (error) {
@@ -699,6 +726,7 @@ app.post('/tournaments/:id/reset-results', requireAuth, async (req, res, next) =
 
   try {
     await resetBracketResults(tournamentId);
+    await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'All reported scores/results were cleared, but the current first-round bracket stayed.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);
   } catch (error) {
@@ -717,6 +745,7 @@ app.post('/tournaments/:id/delete-bracket', requireAuth, async (req, res, next) 
         tournamentId,
       ]);
     });
+    await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'Bracket deleted. Players are still saved.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);
   } catch (error) {
@@ -804,6 +833,7 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       await syncTournamentStatus(client, tournamentId);
     });
 
+    await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'Match updated. The next round was synced automatically.');
     res.redirect(`/tournaments/${tournamentId}#match-${matchId}`);
   } catch (error) {
