@@ -8,7 +8,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="/dashboard" class="brand">🏆 Zef Tournaments</a>
+    <a href="/dashboard" class="brand">Zef Tournaments</a>
     <form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form>
   </header>
 
@@ -39,9 +39,21 @@
           Region
           <input name="default_region" maxlength="50" placeholder="EU / NA / ASIA">
         </label>
+        <label>
+          Tournament starts
+          <input name="signup_closes_at" type="datetime-local">
+        </label>
+        <label>
+          Prize
+          <input name="prize" maxlength="500" placeholder="$50 / Robux / custom prize">
+        </label>
         <label class="full">
           Description
           <textarea name="description" rows="3" maxlength="1000" placeholder="Tournament info shown in Discord."></textarea>
+        </label>
+        <label class="full">
+          Rules
+          <textarea name="rules" rows="4" maxlength="1000" placeholder="One rule per line."></textarea>
         </label>
         <button class="primary" type="submit">Create</button>
       </form>
@@ -54,7 +66,7 @@
       </div>
 
       <% if (tournaments.length === 0) { %>
-        <p class="empty">No tournaments yet. Create one with `/tournament create` in Discord or use the form above.</p>
+        <p class="empty">No tournaments yet. Create one with `/tournamentcreate` in Discord or use the form above.</p>
       <% } else { %>
         <div class="cards">
           <% tournaments.forEach((tournament) => { %>

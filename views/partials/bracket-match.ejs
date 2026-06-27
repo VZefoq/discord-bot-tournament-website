@@ -11,8 +11,8 @@
   </div>
 
   <div class="challonge-player <%= p1Winner ? 'winner-slot' : '' %> <%= !match.player1_participant_id ? 'empty-slot' : '' %>">
-    <button class="win-button" name="winner_slot" value="p1" type="submit" <%= !match.player1_participant_id ? 'disabled' : '' %> title="Mark player 1 as winner">✓</button>
-    <span class="seed-badge"><%= match.p1_seed || '—' %></span>
+    <button class="win-button" name="winner_slot" value="p1" type="submit" <%= !match.player1_participant_id ? 'disabled' : '' %> title="Mark player 1 as winner">Win</button>
+    <span class="seed-badge"><%= match.p1_seed || '-' %></span>
     <div class="player-name" title="<%= match.player1_label || 'TBD' %>">
       <strong><%= match.player1_short || 'TBD' %></strong>
       <% if (match.p1_discord) { %><small><%= match.p1_discord %></small><% } %>
@@ -21,8 +21,8 @@
   </div>
 
   <div class="challonge-player <%= p2Winner ? 'winner-slot' : '' %> <%= !match.player2_participant_id ? 'empty-slot' : '' %>">
-    <button class="win-button" name="winner_slot" value="p2" type="submit" <%= !match.player2_participant_id ? 'disabled' : '' %> title="Mark player 2 as winner">✓</button>
-    <span class="seed-badge"><%= match.p2_seed || '—' %></span>
+    <button class="win-button" name="winner_slot" value="p2" type="submit" <%= !match.player2_participant_id ? 'disabled' : '' %> title="Mark player 2 as winner">Win</button>
+    <span class="seed-badge"><%= match.p2_seed || '-' %></span>
     <div class="player-name" title="<%= match.player2_label || 'TBD' %>">
       <strong><%= match.player2_short || 'TBD' %></strong>
       <% if (match.p2_discord) { %><small><%= match.p2_discord %></small><% } %>
@@ -45,7 +45,7 @@
         <select name="player1_participant_id">
           <option value="">TBD / custom</option>
           <% participants.forEach((participant) => { %>
-            <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' · ' : '' %><%= participant.roblox_username %></option>
+            <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' - ' : '' %><%= participant.roblox_username %></option>
           <% }) %>
         </select>
       </label>
@@ -54,7 +54,7 @@
         <select name="player2_participant_id">
           <option value="">TBD / custom</option>
           <% participants.forEach((participant) => { %>
-            <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' · ' : '' %><%= participant.roblox_username %></option>
+            <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' - ' : '' %><%= participant.roblox_username %></option>
           <% }) %>
         </select>
       </label>

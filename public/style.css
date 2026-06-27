@@ -1,15 +1,15 @@
 :root {
-  --bg: #0b1020;
-  --panel: #131a2d;
-  --panel-2: #17213a;
-  --text: #f8fafc;
-  --muted: #9aa4b2;
-  --line: #27334f;
-  --primary: #45a3ff;
-  --primary-dark: #1d6fd1;
-  --danger: #ff5c7a;
-  --success: #45d483;
-  --warning: #ffca5c;
+  --bg: #07090d;
+  --panel: #101318;
+  --panel-2: #171b22;
+  --text: #f2f4f7;
+  --muted: #9ca3af;
+  --line: #2a303a;
+  --primary: #6f7a8a;
+  --primary-dark: #454d59;
+  --danger: #d85f73;
+  --success: #5fbf88;
+  --warning: #c9a960;
 }
 
 * {
@@ -20,7 +20,7 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background: radial-gradient(circle at top left, #172554 0, var(--bg) 36rem);
+  background: linear-gradient(180deg, #0b0e13 0, var(--bg) 34rem);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -82,7 +82,7 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(69, 163, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(111, 122, 138, 0.18);
 }
 
 label {
@@ -102,7 +102,7 @@ label {
   padding: 2rem;
   border: 1px solid var(--line);
   border-radius: 28px;
-  background: rgba(19, 26, 45, 0.88);
+  background: rgba(16, 19, 24, 0.92);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
@@ -188,7 +188,7 @@ label {
   padding: 1.2rem;
   border: 1px solid var(--line);
   border-radius: 24px;
-  background: rgba(19, 26, 45, 0.86);
+  background: rgba(16, 19, 24, 0.92);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
 }
 
@@ -256,7 +256,7 @@ label {
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(23, 33, 58, 0.9), rgba(15, 23, 42, 0.9));
+  background: linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(12, 15, 20, 0.94));
   text-decoration: none;
 }
 
@@ -450,8 +450,8 @@ label {
   border-radius: 26px;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    radial-gradient(circle at center, rgba(69, 163, 255, 0.1), transparent 34rem),
-    rgba(15, 23, 42, 0.55);
+    radial-gradient(circle at center, rgba(111, 122, 138, 0.08), transparent 34rem),
+    rgba(12, 15, 20, 0.78);
   background-size: 56px 56px, auto, auto;
 }
 
@@ -659,8 +659,8 @@ label {
   padding: 0.45rem 0.65rem;
   border-radius: 10px;
   font-size: 0.8rem;
-  background: rgba(69, 163, 255, 0.18);
-  border: 1px solid rgba(69, 163, 255, 0.35);
+  background: rgba(111, 122, 138, 0.2);
+  border: 1px solid rgba(111, 122, 138, 0.42);
 }
 
 @media (max-width: 1100px) {
@@ -697,7 +697,7 @@ label {
 /* Challonge-style management update */
 .eyebrow {
   margin: 0 0 0.35rem;
-  color: #9ed0ff;
+  color: #b7bec9;
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -724,7 +724,7 @@ label {
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(23, 33, 58, 0.92), rgba(15, 23, 42, 0.72));
+  background: linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(12, 15, 20, 0.82));
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
 }
 
@@ -888,7 +888,7 @@ label {
 
 .challonge-player {
   display: grid;
-  grid-template-columns: 30px 38px minmax(0, 1fr) 58px;
+  grid-template-columns: 42px 38px minmax(0, 1fr) 58px;
   align-items: center;
   gap: 0.45rem;
   min-height: 44px;
@@ -909,7 +909,7 @@ label {
 
 .win-button {
   min-width: 0;
-  width: 30px;
+  width: 42px;
   height: 30px;
   padding: 0;
   border-radius: 9px;
@@ -917,6 +917,7 @@ label {
   border: 1px solid rgba(69, 212, 131, 0.35);
   color: #b9ffd4;
   font-weight: 1000;
+  font-size: 0.72rem;
 }
 
 .win-button:disabled {
@@ -992,8 +993,8 @@ label {
   display: none;
 }
 
-.challonge-bracket .visual-match-edit summary::before {
-  content: "⚙ ";
+.challonge-bracket .visual-match-edit summary.disabled-before {
+  content: "";
 }
 
 @media (max-width: 1180px) {
@@ -1027,4 +1028,18 @@ label {
   .small-actions button {
     width: 100%;
   }
+}
+
+.challonge-bracket .visual-match-edit summary::before {
+  content: "" !important;
+}
+
+.export-image .win-button,
+.export-image .match-report-actions,
+.export-image .visual-match-edit {
+  display: none;
+}
+
+.export-image .challonge-player {
+  grid-template-columns: 38px minmax(0, 1fr) 58px;
 }

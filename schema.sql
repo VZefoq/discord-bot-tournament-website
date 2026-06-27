@@ -6,9 +6,12 @@ CREATE TABLE IF NOT EXISTS tournaments (
   created_by_discord_id TEXT,
   name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
+  rules TEXT NOT NULL DEFAULT '',
+  prize TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'signup',
   max_participants INTEGER,
   default_region TEXT NOT NULL DEFAULT '',
+  signup_closes_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

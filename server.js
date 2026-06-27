@@ -69,6 +69,32 @@ function cleanText(value, max = 2000) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
+function cleanMultiline(value, max = 2000) {
+  return String(value || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, max);
+}
+
+function toDateOrNull(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function datetimeLocalValue(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return offsetDate.toISOString().slice(0, 16);
+}
+
 function participantLabel(participant) {
   if (!participant) return '';
   const roblox = participant.roblox_username || participant.player_name || '';
@@ -120,6 +146,10 @@ function roundLabel(roundNumber, finalRound) {
 async function loadTournament(id) {
   const result = await query('SELECT * FROM tournaments WHERE id = $1', [id]);
   return result.rows[0] || null;
+}
+
+async function touchTournament(tournamentId) {
+  await query('UPDATE tournaments SET updated_at = NOW() WHERE id = $1', [tournamentId]);
 }
 
 async function loadParticipants(tournamentId) {
@@ -414,15 +444,19 @@ app.get('/dashboard', requireAuth, async (req, res, next) => {
 app.post('/tournaments', requireAuth, async (req, res, next) => {
   try {
     const name = cleanText(req.body.name, 100) || 'Untitled Tournament';
-    const description = cleanText(req.body.description, 1000);
+    const description = cleanMultiline(req.body.description, 1000);
+    const rules = cleanMultiline(req.body.rules, 1000);
+    const prize = cleanMultiline(req.body.prize, 500);
     const maxParticipants = toInt(req.body.max_participants);
     const defaultRegion = cleanText(req.body.default_region, 50);
+    const signupClosesAt = toDateOrNull(req.body.signup_closes_at);
 
     const result = await query(
-      `INSERT INTO tournaments (guild_id, name, description, max_participants, default_region)
-       VALUES ('dashboard', $1, $2, $3, $4)
+      `INSERT INTO tournaments
+        (guild_id, name, description, rules, prize, max_participants, default_region, signup_closes_at)
+       VALUES ('dashboard', $1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [name, description, maxParticipants, defaultRegion],
+      [name, description, rules, prize, maxParticipants, defaultRegion, signupClosesAt],
     );
 
     flash(req, 'success', 'Tournament created. Add players, seed them, then start the bracket.');
@@ -472,6 +506,7 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
       rounds,
       stats,
       roundLabel,
+      datetimeLocalValue,
     });
   } catch (error) {
     next(error);
@@ -485,17 +520,23 @@ app.post('/tournaments/:id/details', requireAuth, async (req, res, next) => {
       `UPDATE tournaments
        SET name = $1,
            description = $2,
-           status = $3,
-           max_participants = $4,
-           default_region = $5,
+           rules = $3,
+           prize = $4,
+           status = $5,
+           max_participants = $6,
+           default_region = $7,
+           signup_closes_at = $8,
            updated_at = NOW()
-       WHERE id = $6`,
+       WHERE id = $9`,
       [
         cleanText(req.body.name, 100) || 'Untitled Tournament',
-        cleanText(req.body.description, 1000),
+        cleanMultiline(req.body.description, 1000),
+        cleanMultiline(req.body.rules, 1000),
+        cleanMultiline(req.body.prize, 500),
         cleanText(req.body.status, 30) || 'signup',
         toInt(req.body.max_participants),
         cleanText(req.body.default_region, 50),
+        toDateOrNull(req.body.signup_closes_at),
         tournamentId,
       ],
     );
@@ -529,6 +570,7 @@ app.post('/tournaments/:id/participants', requireAuth, async (req, res, next) =>
         toInt(req.body.seed),
       ],
     );
+    await touchTournament(tournamentId);
     flash(req, 'success', 'Participant saved. Rebuild the bracket if it was already generated.');
     res.redirect(`/tournaments/${tournamentId}#participants`);
   } catch (error) {
@@ -543,6 +585,7 @@ app.post('/tournaments/:id/participants/:participantId/delete', requireAuth, asy
       toInt(req.params.participantId),
       tournamentId,
     ]);
+    await touchTournament(tournamentId);
     flash(req, 'success', 'Participant deleted. Rebuild the bracket if needed.');
     res.redirect(`/tournaments/${tournamentId}#participants`);
   } catch (error) {
@@ -570,6 +613,7 @@ app.post('/tournaments/:id/participants/:participantId', requireAuth, async (req
         tournamentId,
       ],
     );
+    await touchTournament(tournamentId);
     flash(req, 'success', 'Participant updated.');
     res.redirect(`/tournaments/${tournamentId}#participants`);
   } catch (error) {

@@ -8,7 +8,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="/dashboard" class="brand">🏆 Zef Tournaments</a>
+    <a href="/dashboard" class="brand">Zef Tournaments</a>
     <form method="post" action="/logout"><button class="ghost" type="submit">Logout</button></form>
   </header>
 
@@ -19,8 +19,8 @@
 
     <section class="hero split challonge-hero">
       <div>
-        <a href="/dashboard" class="backlink">← Back to dashboard</a>
-        <p class="eyebrow">Single elimination · Challonge-style management</p>
+        <a href="/dashboard" class="backlink">Back to dashboard</a>
+        <p class="eyebrow">Single elimination management</p>
         <h1><%= tournament.name %></h1>
         <p class="muted">Tournament ID <%= tournament.id %> · <%= participants.length %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %> players</p>
       </div>
@@ -78,10 +78,14 @@
         <label>
           Status
           <select name="status">
-            <% ['signup', 'open', 'running', 'completed', 'cancelled'].forEach((status) => { %>
+            <% ['signup', 'open', 'closed', 'running', 'completed', 'cancelled'].forEach((status) => { %>
               <option value="<%= status %>" <%= tournament.status === status ? 'selected' : '' %>><%= status %></option>
             <% }) %>
           </select>
+        </label>
+        <label>
+          Tournament starts
+          <input name="signup_closes_at" type="datetime-local" value="<%= datetimeLocalValue(tournament.signup_closes_at) %>">
         </label>
         <label>
           Max players
@@ -92,8 +96,16 @@
           <input name="default_region" value="<%= tournament.default_region || '' %>" maxlength="50">
         </label>
         <label class="full">
+          Prize
+          <textarea name="prize" rows="2" maxlength="500"><%= tournament.prize || '' %></textarea>
+        </label>
+        <label class="full">
           Description
           <textarea name="description" rows="4" maxlength="1000"><%= tournament.description || '' %></textarea>
+        </label>
+        <label class="full">
+          Rules
+          <textarea name="rules" rows="5" maxlength="1000"><%= tournament.rules || '' %></textarea>
         </label>
         <button class="primary" type="submit">Save settings</button>
       </form>
@@ -103,7 +115,7 @@
       <div class="section-title wrap-title">
         <div>
           <h2>Participants & seeds</h2>
-          <p class="muted compact-note">Like Challonge: seed players first, then start/rebuild the bracket. Seed 1 and seed 2 are placed on opposite sides.</p>
+          <p class="muted compact-note">Seed players first, then start or rebuild the bracket. Seed 1 and seed 2 are placed on opposite sides.</p>
         </div>
         <div class="small-actions">
           <form method="post" action="/tournaments/<%= tournament.id %>/seed-sequential">
@@ -172,9 +184,14 @@
       <div class="section-title wrap-title">
         <div>
           <h2>Bracket</h2>
-          <p class="muted compact-note">Report scores directly on a match. Clicking a winner moves them forward and clears invalid future results when you change/undo something.</p>
+          <p class="muted compact-note">Report scores directly on a match. Clicking a winner moves them forward and clears invalid future results when you change or undo something.</p>
         </div>
-        <span class="pill"><%= stats.completedMatches %> / <%= stats.totalMatches %> completed</span>
+        <div class="small-actions">
+          <% if (matches.length) { %>
+            <button type="button" id="download-bracket" data-filename="<%= tournament.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'tournament' %>-bracket.png">Download bracket</button>
+          <% } %>
+          <span class="pill"><%= stats.completedMatches %> / <%= stats.totalMatches %> completed</span>
+        </div>
       </div>
 
       <% if (matches.length === 0) { %>
@@ -207,7 +224,7 @@
           <% } %>
         </div>
 
-        <div class="playoff-bracket challonge-bracket" style="--left-rounds:<%= leftRounds.length || 1 %>; --right-rounds:<%= rightRounds.length || 1 %>;">
+        <div id="bracket-export" class="playoff-bracket challonge-bracket" style="--left-rounds:<%= leftRounds.length || 1 %>; --right-rounds:<%= rightRounds.length || 1 %>;">
           <div class="bracket-side bracket-left">
             <% leftRounds.forEach((roundNumber, index) => { %>
               <% const roundMatches = splitRound(roundNumber, 'left'); %>
@@ -247,5 +264,6 @@
       <% } %>
     </section>
   </main>
+  <script src="/bracket-download.js"></script>
 </body>
 </html>
