@@ -20,6 +20,7 @@
   <div class="challonge-player <%= p1Winner ? 'winner-slot' : '' %> <%= !match.player1_participant_id ? 'empty-slot' : '' %>">
     <div class="player-name" title="<%= match.player1_label || 'TBD' %>">
       <strong><%= match.player1_short || 'TBD' %></strong>
+      <% if (match.p1_discord) { %><small><%= match.p1_discord %></small><% } %>
     </div>
     <input class="score-input" name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="0" aria-label="Player 1 score">
   </div>
@@ -27,6 +28,7 @@
   <div class="challonge-player <%= p2Winner ? 'winner-slot' : '' %> <%= !match.player2_participant_id ? 'empty-slot' : '' %>">
     <div class="player-name" title="<%= match.player2_label || 'TBD' %>">
       <strong><%= match.player2_short || 'TBD' %></strong>
+      <% if (match.p2_discord) { %><small><%= match.p2_discord %></small><% } %>
     </div>
     <input class="score-input" name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="0" aria-label="Player 2 score">
   </div>

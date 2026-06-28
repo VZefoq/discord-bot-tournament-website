@@ -1198,7 +1198,7 @@ label {
 
 .challonge-player {
   grid-template-columns: minmax(0, 1fr) 42px;
-  min-height: 25px;
+  min-height: 34px;
   gap: 0.25rem;
   padding: 0.22rem;
   border: 1px solid rgba(39, 51, 79, 0.95);
@@ -1216,6 +1216,7 @@ label {
 }
 
 .challonge-player .player-name {
+  min-width: 0;
   padding: 0;
 }
 
@@ -1226,12 +1227,18 @@ label {
 }
 
 .challonge-player .player-name small {
-  display: none;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.58rem;
+  line-height: 1.05;
 }
 
 .challonge-player .score-input {
-  min-height: 23px;
-  height: 23px;
+  min-height: 28px;
+  height: 28px;
   margin: 0;
   padding: 0.14rem 0.25rem;
   border: 1px solid var(--line);
