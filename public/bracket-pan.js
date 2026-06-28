@@ -9,8 +9,10 @@
   const minScale = 0.2;
   const maxScale = 1.85;
   const minWorldPadding = 900;
+  const stateKey = `bracket-view:${window.location.pathname}`;
   let scale = 1;
   let dragStart = null;
+  let saveTimer = null;
 
   function getBracketSize() {
     return {
@@ -37,10 +39,60 @@
     return { width, height, padding };
   }
 
+  function saveState() {
+    try {
+      sessionStorage.setItem(
+        stateKey,
+        JSON.stringify({
+          scale,
+          scrollLeft: viewport.scrollLeft,
+          scrollTop: viewport.scrollTop,
+          windowX: window.scrollX,
+          windowY: window.scrollY,
+          savedAt: Date.now(),
+        }),
+      );
+    } catch (error) {
+      // Ignore storage failures. The bracket still works without persisted view state.
+    }
+  }
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 120);
+  }
+
+  function restoreState() {
+    let state = null;
+
+    try {
+      state = JSON.parse(sessionStorage.getItem(stateKey) || 'null');
+    } catch (error) {
+      return false;
+    }
+
+    if (!state || typeof state.scale !== 'number') return false;
+
+    scale = Math.min(maxScale, Math.max(minScale, state.scale));
+    updateCanvasSize();
+    viewport.scrollLeft = Math.max(0, Number(state.scrollLeft) || 0);
+    viewport.scrollTop = Math.max(0, Number(state.scrollTop) || 0);
+
+    const windowX = Math.max(0, Number(state.windowX) || 0);
+    const windowY = Math.max(0, Number(state.windowY) || 0);
+    requestAnimationFrame(() => {
+      window.scrollTo(windowX, windowY);
+      setTimeout(() => window.scrollTo(windowX, windowY), 0);
+    });
+
+    return true;
+  }
+
   function centerBracket() {
     const { width, padding } = updateCanvasSize();
     viewport.scrollLeft = Math.max(0, padding * scale + (width * scale - viewport.clientWidth) / 2);
     viewport.scrollTop = Math.max(0, padding * scale - 24);
+    scheduleSave();
   }
 
   function fitBracket() {
@@ -52,6 +104,7 @@
     const { padding } = updateCanvasSize();
     viewport.scrollLeft = Math.max(0, padding * scale - (viewport.clientWidth - width * scale) / 2);
     viewport.scrollTop = Math.max(0, padding * scale - (viewport.clientHeight - height * scale) / 2);
+    scheduleSave();
   }
 
   function setScale(nextScale) {
@@ -62,6 +115,7 @@
     updateCanvasSize();
     viewport.scrollLeft = (centerX / previousScale) * scale - viewport.clientWidth / 2;
     viewport.scrollTop = (centerY / previousScale) * scale - viewport.clientHeight / 2;
+    scheduleSave();
   }
 
   function zoomAtPoint(nextScale, clientX, clientY) {
@@ -76,6 +130,7 @@
     updateCanvasSize();
     viewport.scrollLeft = (worldX / previousScale) * scale - viewportX;
     viewport.scrollTop = (worldY / previousScale) * scale - viewportY;
+    scheduleSave();
   }
 
   viewport.addEventListener('pointerdown', (event) => {
@@ -105,10 +160,12 @@
       viewport.releasePointerCapture(event.pointerId);
     }
     dragStart = null;
+    saveState();
   }
 
   viewport.addEventListener('pointerup', stopDragging);
   viewport.addEventListener('pointercancel', stopDragging);
+  viewport.addEventListener('scroll', scheduleSave);
 
   viewport.addEventListener(
     'wheel',
@@ -137,6 +194,21 @@
     });
   });
 
+  document.addEventListener(
+    'submit',
+    (event) => {
+      if (event.target.closest('.visual-match')) {
+        saveState();
+      }
+    },
+    true,
+  );
+
+  window.addEventListener('beforeunload', saveState);
   window.addEventListener('resize', fitBracket);
-  requestAnimationFrame(fitBracket);
+  requestAnimationFrame(() => {
+    if (!restoreState()) {
+      fitBracket();
+    }
+  });
 })();
