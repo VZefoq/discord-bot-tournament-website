@@ -4,84 +4,30 @@
   const isReady = match.player1_participant_id && match.player2_participant_id && !match.winner_participant_id;
   const statusClass = match.winner_participant_id ? 'completed' : isReady ? 'running' : 'pending';
 %>
-<form class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
+<form class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>" data-round="<%= match.round_number %>" data-match="<%= match.match_number %>">
   <div class="visual-match-meta">
     <span><%= matchTitle(match, finalRound) %></span>
-    <span class="status <%= statusClass %>"><%= statusClass === 'running' ? 'ready' : statusClass %></span>
   </div>
 
+  <input type="hidden" name="player1_participant_id" value="<%= match.player1_participant_id || '' %>">
+  <input type="hidden" name="player2_participant_id" value="<%= match.player2_participant_id || '' %>">
+  <input type="hidden" name="player1_name" value="<%= match.player1_name || '' %>">
+  <input type="hidden" name="player2_name" value="<%= match.player2_name || '' %>">
+  <input type="hidden" name="status" value="<%= match.status || '' %>">
+  <input type="hidden" name="winner_override" value="<%= p1Winner ? 'p1' : p2Winner ? 'p2' : '' %>">
+  <input type="hidden" name="action" value="score">
+
   <div class="challonge-player <%= p1Winner ? 'winner-slot' : '' %> <%= !match.player1_participant_id ? 'empty-slot' : '' %>">
-    <button class="win-button" name="winner_slot" value="p1" type="submit" <%= !match.player1_participant_id ? 'disabled' : '' %> title="Mark player 1 as winner">Win</button>
-    <span class="seed-badge"><%= match.p1_seed || '-' %></span>
     <div class="player-name" title="<%= match.player1_label || 'TBD' %>">
       <strong><%= match.player1_short || 'TBD' %></strong>
-      <% if (match.p1_discord) { %><small><%= match.p1_discord %></small><% } %>
     </div>
     <input class="score-input" name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="0" aria-label="Player 1 score">
   </div>
 
   <div class="challonge-player <%= p2Winner ? 'winner-slot' : '' %> <%= !match.player2_participant_id ? 'empty-slot' : '' %>">
-    <button class="win-button" name="winner_slot" value="p2" type="submit" <%= !match.player2_participant_id ? 'disabled' : '' %> title="Mark player 2 as winner">Win</button>
-    <span class="seed-badge"><%= match.p2_seed || '-' %></span>
     <div class="player-name" title="<%= match.player2_label || 'TBD' %>">
       <strong><%= match.player2_short || 'TBD' %></strong>
-      <% if (match.p2_discord) { %><small><%= match.p2_discord %></small><% } %>
     </div>
     <input class="score-input" name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="0" aria-label="Player 2 score">
   </div>
-
-  <div class="match-report-actions">
-    <button class="save-match" name="action" value="score" type="submit">Save score</button>
-    <% if (match.winner_participant_id || match.score1 !== null || match.score2 !== null) { %>
-      <button class="undo-match" name="action" value="clear" type="submit" onclick="return confirm('Undo this result and clear the next rounds depending on it?')">Undo</button>
-    <% } %>
-  </div>
-
-  <details class="visual-match-edit">
-    <summary>Advanced edit</summary>
-    <div class="match-edit-grid">
-      <label>
-        Player 1
-        <select name="player1_participant_id">
-          <option value="">TBD / custom</option>
-          <% participants.forEach((participant) => { %>
-            <option value="<%= participant.id %>" <%= match.player1_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' - ' : '' %><%= participant.roblox_username %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Player 2
-        <select name="player2_participant_id">
-          <option value="">TBD / custom</option>
-          <% participants.forEach((participant) => { %>
-            <option value="<%= participant.id %>" <%= match.player2_participant_id === participant.id ? 'selected' : '' %>><%= participant.seed ? '#' + participant.seed + ' - ' : '' %><%= participant.roblox_username %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Player 1 custom name
-        <input name="player1_name" value="<%= match.player1_name || '' %>" placeholder="Only used without player">
-      </label>
-      <label>
-        Player 2 custom name
-        <input name="player2_name" value="<%= match.player2_name || '' %>" placeholder="Only used without player">
-      </label>
-      <label>
-        Status
-        <select name="status">
-          <% ['pending', 'running', 'completed'].forEach((status) => { %>
-            <option value="<%= status %>" <%= match.status === status ? 'selected' : '' %>><%= status %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Winner override
-        <select name="winner_override">
-          <option value="" <%= !match.winner_participant_id ? 'selected' : '' %>>No winner</option>
-          <option value="p1" <%= p1Winner ? 'selected' : '' %>>Player 1</option>
-          <option value="p2" <%= p2Winner ? 'selected' : '' %>>Player 2</option>
-        </select>
-      </label>
-    </div>
-  </details>
 </form>

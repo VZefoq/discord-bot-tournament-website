@@ -36,6 +36,7 @@
     bracket.style.top = `${Math.ceil(padding * scale)}px`;
     bracket.style.transform = `scale(${scale})`;
     bracket.style.transformOrigin = '0 0';
+    document.dispatchEvent(new CustomEvent('bracket:view-updated'));
     return { width, height, padding };
   }
 
