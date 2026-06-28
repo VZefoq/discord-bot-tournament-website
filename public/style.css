@@ -483,7 +483,7 @@ label {
 }
 
 .bracket-viewport {
-  max-height: min(72vh, 780px);
+  max-height: min(82vh, 920px);
   overflow: auto;
   border: 1px solid rgba(39, 51, 79, 0.85);
   border-radius: 26px;
@@ -516,10 +516,11 @@ label {
 .playoff-bracket {
   --match-width: 288px;
   --match-height: 154px;
-  --connector: 42px;
+  --connector: 54px;
   display: grid;
-  grid-template-columns: max-content minmax(240px, 0.72fr) max-content;
-  gap: 2.6rem;
+  grid-template-columns: max-content var(--match-width) max-content;
+  column-gap: calc(var(--connector) + 1.35rem);
+  row-gap: var(--connector);
   align-items: stretch;
   overflow: visible;
   min-height: 640px;
@@ -574,7 +575,7 @@ label {
   display: grid;
   align-content: center;
   justify-items: center;
-  min-width: 265px;
+  min-width: var(--match-width);
   padding-top: 1.6rem;
 }
 
@@ -741,8 +742,9 @@ label {
 
 @media (max-width: 1100px) {
   .playoff-bracket {
-    grid-template-columns: max-content minmax(220px, 260px) max-content;
-    gap: 1.5rem;
+    grid-template-columns: max-content var(--match-width) max-content;
+    column-gap: calc(var(--connector) + 0.75rem);
+    row-gap: var(--connector);
   }
 }
 
@@ -939,6 +941,7 @@ label {
 .challonge-bracket {
   --match-width: 318px;
   --match-height: 176px;
+  --connector: 64px;
   min-height: 705px;
 }
 

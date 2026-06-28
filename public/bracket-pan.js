@@ -27,7 +27,7 @@
     const previousScale = scale;
     const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
     const centerY = viewport.scrollTop + viewport.clientHeight / 2;
-    scale = Math.min(1.35, Math.max(0.65, nextScale));
+    scale = Math.min(1.75, Math.max(0.55, nextScale));
     updateCanvasSize();
     viewport.scrollLeft = (centerX / previousScale) * scale - viewport.clientWidth / 2;
     viewport.scrollTop = (centerY / previousScale) * scale - viewport.clientHeight / 2;
