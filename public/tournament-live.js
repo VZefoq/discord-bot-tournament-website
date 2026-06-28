@@ -63,7 +63,7 @@
     }
 
     if (target.name === 'status' && status) {
-      status.textContent = target.value;
+      status.textContent = target.selectedOptions?.[0]?.textContent || target.value;
     }
   }
 

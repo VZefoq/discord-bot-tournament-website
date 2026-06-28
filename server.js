@@ -143,6 +143,30 @@ function roundLabel(roundNumber, finalRound) {
   return `Round ${roundNumber}`;
 }
 
+function matchTitle(match, finalRound) {
+  if (match.round_number === finalRound) return 'Final';
+  if (match.round_number === finalRound - 1) return `Semi final ${match.match_number}`;
+  if (match.round_number === finalRound - 2) return `Quarter final ${match.match_number}`;
+  return `Round ${match.round_number} match ${match.match_number}`;
+}
+
+function normalizeTournamentStatus(status) {
+  const value = cleanText(status, 30).toLowerCase();
+
+  if (['running', 'ongoing'].includes(value)) return 'ongoing';
+  if (['completed', 'ended'].includes(value)) return 'ended';
+  return 'open';
+}
+
+function displayTournamentStatus(status) {
+  const labels = {
+    open: 'Open',
+    ongoing: 'Ongoing',
+    ended: 'Ended',
+  };
+  return labels[normalizeTournamentStatus(status)];
+}
+
 async function loadTournament(id) {
   const result = await query('SELECT * FROM tournaments WHERE id = $1', [id]);
   return result.rows[0] || null;
@@ -389,7 +413,7 @@ async function syncTournamentStatus(client, tournamentId) {
 
   if (finalMatch.winner_participant_id) {
     await client.query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
-      'completed',
+      'ended',
       tournamentId,
     ]);
     return;
@@ -397,7 +421,7 @@ async function syncTournamentStatus(client, tournamentId) {
 
   await client.query(
     `UPDATE tournaments
-     SET status = CASE WHEN status = 'completed' THEN 'running' ELSE status END,
+     SET status = CASE WHEN status IN ('completed', 'ended') THEN 'ongoing' ELSE status END,
          updated_at = NOW()
      WHERE id = $1`,
     [tournamentId],
@@ -490,7 +514,7 @@ async function resetBracketResults(tournamentId) {
     await autoAdvanceByes(client, tournamentId);
     await repairPrematureAutoAdvances(client, tournamentId);
     await client.query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
-      'running',
+      'ongoing',
       tournamentId,
     ]);
   });
@@ -541,7 +565,7 @@ app.get('/dashboard', requireAuth, async (req, res, next) => {
        ORDER BY t.created_at DESC`,
     );
 
-    res.render('dashboard', { tournaments: result.rows });
+    res.render('dashboard', { tournaments: result.rows, displayTournamentStatus });
   } catch (error) {
     next(error);
   }
@@ -559,8 +583,8 @@ app.post('/tournaments', requireAuth, async (req, res, next) => {
 
     const result = await query(
       `INSERT INTO tournaments
-        (guild_id, name, description, rules, prize, max_participants, default_region, signup_closes_at)
-       VALUES ('dashboard', $1, $2, $3, $4, $5, $6, $7)
+        (guild_id, name, description, rules, prize, status, max_participants, default_region, signup_closes_at)
+       VALUES ('dashboard', $1, $2, $3, $4, 'open', $5, $6, $7)
        RETURNING id`,
       [name, description, rules, prize, maxParticipants, defaultRegion, signupClosesAt],
     );
@@ -647,6 +671,9 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
       rounds,
       stats,
       roundLabel,
+      matchTitle,
+      normalizeTournamentStatus,
+      displayTournamentStatus,
       datetimeLocalValue,
     });
   } catch (error) {
@@ -674,7 +701,7 @@ app.post('/tournaments/:id/details', requireAuth, async (req, res, next) => {
         cleanMultiline(req.body.description, 1000),
         cleanMultiline(req.body.rules, 1000),
         cleanMultiline(req.body.prize, 500),
-        cleanText(req.body.status, 30) || 'signup',
+        normalizeTournamentStatus(req.body.status),
         toInt(req.body.max_participants),
         cleanText(req.body.default_region, 50),
         toDateOrNull(req.body.signup_closes_at),
@@ -837,7 +864,7 @@ app.post('/tournaments/:id/start', requireAuth, async (req, res, next) => {
     }
 
     await query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
-      'running',
+      'ongoing',
       tournamentId,
     ]);
 
@@ -884,7 +911,7 @@ app.post('/tournaments/:id/delete-bracket', requireAuth, async (req, res, next) 
     await withTransaction(async (client) => {
       await client.query('DELETE FROM tournament_matches WHERE tournament_id = $1', [tournamentId]);
       await client.query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
-        'signup',
+        'open',
         tournamentId,
       ]);
     });

@@ -6,7 +6,7 @@
 %>
 <form class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
   <div class="visual-match-meta">
-    <span>Match <%= match.match_number %></span>
+    <span><%= matchTitle(match, finalRound) %></span>
     <span class="status <%= statusClass %>"><%= statusClass === 'running' ? 'ready' : statusClass %></span>
   </div>
 

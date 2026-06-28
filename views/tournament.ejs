@@ -49,7 +49,7 @@
     <section class="stats-grid">
       <div class="stat-card">
         <span>Status</span>
-        <strong id="tournament-status"><%= tournament.status %></strong>
+        <strong id="tournament-status"><%= displayTournamentStatus(tournament.status) %></strong>
       </div>
       <div class="stat-card">
         <span>Players</span>
@@ -85,8 +85,12 @@
         <label>
           Status
           <select name="status">
-            <% ['signup', 'open', 'closed', 'running', 'completed', 'cancelled'].forEach((status) => { %>
-              <option value="<%= status %>" <%= tournament.status === status ? 'selected' : '' %>><%= status %></option>
+            <% [
+              ['open', 'Open'],
+              ['ongoing', 'Ongoing'],
+              ['ended', 'Ended'],
+            ].forEach(([status, label]) => { %>
+              <option value="<%= status %>" <%= normalizeTournamentStatus(tournament.status) === status ? 'selected' : '' %>><%= label %></option>
             <% }) %>
           </select>
         </label>
@@ -247,7 +251,7 @@
                     <h3><%= roundLabel(roundNumber, finalRound) %></h3>
                     <div class="visual-round-stack">
                       <% roundMatches.forEach((match) => { %>
-                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'left' }) %>
+                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'left', finalRound, matchTitle }) %>
                       <% }) %>
                     </div>
                   </div>
@@ -258,7 +262,7 @@
                 <div class="bracket-title-line"></div>
                 <h3 class="final-heading">Final</h3>
                 <% (rounds[finalRound] || []).forEach((match) => { %>
-                  <%- include('partials/bracket-match', { match, tournament, participants, side: 'final' }) %>
+                  <%- include('partials/bracket-match', { match, tournament, participants, side: 'final', finalRound, matchTitle }) %>
                 <% }) %>
               </div>
 
@@ -269,7 +273,7 @@
                     <h3><%= roundLabel(roundNumber, finalRound) %></h3>
                     <div class="visual-round-stack">
                       <% roundMatches.forEach((match) => { %>
-                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'right' }) %>
+                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'right', finalRound, matchTitle }) %>
                       <% }) %>
                     </div>
                   </div>

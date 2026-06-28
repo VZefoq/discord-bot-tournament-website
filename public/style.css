@@ -666,6 +666,13 @@ label {
   letter-spacing: 0.04em;
 }
 
+.visual-match-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .visual-slot {
   display: grid;
   grid-template-columns: 1fr 54px;
