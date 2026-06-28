@@ -6,11 +6,8 @@
   if (!viewport || !canvas || !bracket) return;
 
   const interactiveSelector = 'a, button, input, select, textarea, summary, details, label';
-  const minScale = 0.2;
-  const maxScale = 1.85;
   const minWorldPadding = 900;
-  const stateKey = `bracket-view:v2:${window.location.pathname}`;
-  let scale = 1;
+  const stateKey = `bracket-view:v3:${window.location.pathname}`;
   let dragStart = null;
   let saveTimer = null;
 
@@ -28,14 +25,13 @@
   function updateCanvasSize() {
     const { width, height } = getBracketSize();
     const padding = getWorldPadding();
-    canvas.style.width = `${Math.ceil((width + padding * 2) * scale)}px`;
-    canvas.style.height = `${Math.ceil((height + padding * 2) * scale)}px`;
+    canvas.style.width = `${Math.ceil(width + padding * 2)}px`;
+    canvas.style.height = `${Math.ceil(height + padding * 2)}px`;
     canvas.style.transform = 'none';
     bracket.style.position = 'absolute';
-    bracket.style.left = `${Math.ceil(padding * scale)}px`;
-    bracket.style.top = `${Math.ceil(padding * scale)}px`;
-    bracket.style.transform = `scale(${scale})`;
-    bracket.style.transformOrigin = '0 0';
+    bracket.style.left = `${Math.ceil(padding)}px`;
+    bracket.style.top = `${Math.ceil(padding)}px`;
+    bracket.style.transform = 'none';
     document.dispatchEvent(new CustomEvent('bracket:view-updated'));
     return { width, height, padding };
   }
@@ -45,7 +41,6 @@
       sessionStorage.setItem(
         stateKey,
         JSON.stringify({
-          scale,
           scrollLeft: viewport.scrollLeft,
           scrollTop: viewport.scrollTop,
           windowX: window.scrollX,
@@ -72,9 +67,8 @@
       return false;
     }
 
-    if (!state || typeof state.scale !== 'number') return false;
+    if (!state) return false;
 
-    scale = Math.min(maxScale, Math.max(minScale, state.scale));
     updateCanvasSize();
     viewport.scrollLeft = Math.max(0, Number(state.scrollLeft) || 0);
     viewport.scrollTop = Math.max(0, Number(state.scrollTop) || 0);
@@ -90,47 +84,9 @@
   }
 
   function centerBracket() {
-    const { width, padding } = updateCanvasSize();
-    viewport.scrollLeft = Math.max(0, padding * scale + (width * scale - viewport.clientWidth) / 2);
-    viewport.scrollTop = Math.max(0, padding * scale - 24);
-    scheduleSave();
-  }
-
-  function fitBracket() {
-    const { width, height } = getBracketSize();
-    const availableWidth = Math.max(1, viewport.clientWidth - 28);
-    const availableHeight = Math.max(1, viewport.clientHeight - 28);
-    const nextScale = Math.min(1, availableWidth / width, availableHeight / height);
-    scale = Math.max(minScale, Math.min(maxScale, nextScale));
     const { padding } = updateCanvasSize();
-    viewport.scrollLeft = Math.max(0, padding * scale - (viewport.clientWidth - width * scale) / 2);
-    viewport.scrollTop = Math.max(0, padding * scale - (viewport.clientHeight - height * scale) / 2);
-    scheduleSave();
-  }
-
-  function setScale(nextScale) {
-    const previousScale = scale;
-    const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
-    const centerY = viewport.scrollTop + viewport.clientHeight / 2;
-    scale = Math.min(maxScale, Math.max(minScale, nextScale));
-    updateCanvasSize();
-    viewport.scrollLeft = (centerX / previousScale) * scale - viewport.clientWidth / 2;
-    viewport.scrollTop = (centerY / previousScale) * scale - viewport.clientHeight / 2;
-    scheduleSave();
-  }
-
-  function zoomAtPoint(nextScale, clientX, clientY) {
-    const previousScale = scale;
-    const rect = viewport.getBoundingClientRect();
-    const viewportX = clientX - rect.left;
-    const viewportY = clientY - rect.top;
-    const worldX = viewport.scrollLeft + viewportX;
-    const worldY = viewport.scrollTop + viewportY;
-
-    scale = Math.min(maxScale, Math.max(minScale, nextScale));
-    updateCanvasSize();
-    viewport.scrollLeft = (worldX / previousScale) * scale - viewportX;
-    viewport.scrollTop = (worldY / previousScale) * scale - viewportY;
+    viewport.scrollLeft = Math.max(0, padding - 24);
+    viewport.scrollTop = Math.max(0, padding - 24);
     scheduleSave();
   }
 
@@ -168,33 +124,6 @@
   viewport.addEventListener('pointercancel', stopDragging);
   viewport.addEventListener('scroll', scheduleSave);
 
-  viewport.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault();
-      const zoomStep = event.deltaY > 0 ? -0.1 : 0.1;
-      zoomAtPoint(scale + zoomStep, event.clientX, event.clientY);
-    },
-    { passive: false },
-  );
-
-  document.querySelectorAll('[data-bracket-zoom]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const action = button.dataset.bracketZoom;
-
-      if (action === 'in') {
-        setScale(scale + 0.1);
-      } else if (action === 'out') {
-        setScale(scale - 0.1);
-      } else if (action === 'fit') {
-        fitBracket();
-      } else {
-        scale = 1;
-        centerBracket();
-      }
-    });
-  });
-
   document.addEventListener(
     'submit',
     (event) => {
@@ -206,14 +135,17 @@
   );
 
   window.addEventListener('beforeunload', saveState);
-  window.addEventListener('resize', fitBracket);
+  window.addEventListener('resize', () => {
+    updateCanvasSize();
+    scheduleSave();
+  });
   document.addEventListener('bracket:content-updated', () => {
     updateCanvasSize();
     saveState();
   });
   requestAnimationFrame(() => {
     if (!restoreState()) {
-      fitBracket();
+      centerBracket();
     }
   });
 })();

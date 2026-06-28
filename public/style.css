@@ -484,8 +484,8 @@ label {
 
 .bracket-viewport {
   width: 100%;
-  height: min(82vh, 920px);
-  min-height: 620px;
+  height: min(78vh, 760px);
+  min-height: 560px;
   overflow: auto;
   border: 1px solid rgba(39, 51, 79, 0.85);
   border-radius: 26px;
@@ -1139,17 +1139,17 @@ label {
 
 /* Compact left-to-right bracket using the dashboard's own visual style. */
 .challonge-bracket {
-  --match-width: 210px;
-  --match-height: 72px;
-  --connector: 58px;
+  --match-width: 190px;
+  --match-height: 66px;
+  --connector: 36px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--rounds), var(--match-width));
   column-gap: var(--connector);
   align-items: stretch;
   width: max-content;
-  min-height: max(520px, calc(var(--base-matches) * 60px));
-  padding: 1.2rem 2rem 1.6rem;
+  min-height: max(560px, calc(var(--base-matches) * 58px));
+  padding: 1rem 1.4rem 1.4rem;
 }
 
 .challonge-bracket .visual-round {
