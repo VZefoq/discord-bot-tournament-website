@@ -6,12 +6,20 @@
   if (!viewport || !canvas || !bracket) return;
 
   const interactiveSelector = 'a, button, input, select, textarea, summary, details, label';
+  const minScale = 0.2;
+  const maxScale = 1.85;
   let scale = 1;
   let dragStart = null;
 
+  function getBracketSize() {
+    return {
+      width: bracket.scrollWidth || bracket.offsetWidth || 1,
+      height: bracket.scrollHeight || bracket.offsetHeight || 1,
+    };
+  }
+
   function updateCanvasSize() {
-    const width = bracket.offsetWidth || bracket.scrollWidth;
-    const height = bracket.offsetHeight || bracket.scrollHeight;
+    const { width, height } = getBracketSize();
     canvas.style.width = `${Math.ceil(width * scale)}px`;
     canvas.style.height = `${Math.ceil(height * scale)}px`;
     canvas.style.transform = `scale(${scale})`;
@@ -23,11 +31,22 @@
     viewport.scrollTop = 0;
   }
 
+  function fitBracket() {
+    const { width, height } = getBracketSize();
+    const availableWidth = Math.max(1, viewport.clientWidth - 28);
+    const availableHeight = Math.max(1, viewport.clientHeight - 28);
+    const nextScale = Math.min(1, availableWidth / width, availableHeight / height);
+    scale = Math.max(minScale, Math.min(maxScale, nextScale));
+    updateCanvasSize();
+    viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+    viewport.scrollTop = 0;
+  }
+
   function setScale(nextScale) {
     const previousScale = scale;
     const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
     const centerY = viewport.scrollTop + viewport.clientHeight / 2;
-    scale = Math.min(1.75, Math.max(0.55, nextScale));
+    scale = Math.min(maxScale, Math.max(minScale, nextScale));
     updateCanvasSize();
     viewport.scrollLeft = (centerX / previousScale) * scale - viewport.clientWidth / 2;
     viewport.scrollTop = (centerY / previousScale) * scale - viewport.clientHeight / 2;
@@ -73,6 +92,8 @@
         setScale(scale + 0.1);
       } else if (action === 'out') {
         setScale(scale - 0.1);
+      } else if (action === 'fit') {
+        fitBracket();
       } else {
         scale = 1;
         centerBracket();
@@ -80,6 +101,6 @@
     });
   });
 
-  window.addEventListener('resize', updateCanvasSize);
-  requestAnimationFrame(centerBracket);
+  window.addEventListener('resize', fitBracket);
+  requestAnimationFrame(fitBracket);
 })();

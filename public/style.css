@@ -483,6 +483,7 @@ label {
 }
 
 .bracket-viewport {
+  width: 100%;
   max-height: min(82vh, 920px);
   overflow: auto;
   border: 1px solid rgba(39, 51, 79, 0.85);
@@ -1112,7 +1113,7 @@ label {
 
   .bracket-controls {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
