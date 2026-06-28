@@ -2,7 +2,7 @@
   const p1Winner = match.winner_participant_id && match.winner_participant_id === match.player1_participant_id;
   const p2Winner = match.winner_participant_id && match.winner_participant_id === match.player2_participant_id;
   const isReady = match.player1_participant_id && match.player2_participant_id && !match.winner_participant_id;
-  const statusClass = match.status === 'completed' ? 'completed' : isReady ? 'running' : 'pending';
+  const statusClass = match.winner_participant_id ? 'completed' : isReady ? 'running' : 'pending';
 %>
 <form class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>">
   <div class="visual-match-meta">

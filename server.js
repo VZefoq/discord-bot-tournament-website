@@ -259,6 +259,23 @@ async function propagateWinner(client, tournamentId, match) {
   );
 }
 
+async function loadSourceMatchForSlot(client, tournamentId, match, slot) {
+  if (!match || match.round_number <= 1) return null;
+
+  const sourceMatchNumber = match.match_number * 2 - (slot === 'p1' ? 1 : 0);
+  const result = await client.query(
+    `SELECT * FROM tournament_matches
+     WHERE tournament_id = $1 AND round_number = $2 AND match_number = $3`,
+    [tournamentId, match.round_number - 1, sourceMatchNumber],
+  );
+  return result.rows[0] || null;
+}
+
+async function missingSlotWaitsForSource(client, tournamentId, match, missingSlot) {
+  const sourceMatch = await loadSourceMatchForSlot(client, tournamentId, match, missingSlot);
+  return Boolean(sourceMatch && !sourceMatch.winner_participant_id);
+}
+
 async function autoAdvanceByes(client, tournamentId) {
   let changed = true;
 
@@ -275,6 +292,13 @@ async function autoAdvanceByes(client, tournamentId) {
     );
 
     for (const match of result.rows) {
+      const missingSlot = match.player1_participant_id ? 'p2' : 'p1';
+      const waitsForSource = await missingSlotWaitsForSource(client, tournamentId, match, missingSlot);
+
+      if (waitsForSource) {
+        continue;
+      }
+
       const winnerId = match.player1_participant_id || match.player2_participant_id;
       const updateResult = await client.query(
         `UPDATE tournament_matches
@@ -287,6 +311,68 @@ async function autoAdvanceByes(client, tournamentId) {
       changed = true;
     }
   }
+}
+
+async function repairPrematureAutoAdvances(client, tournamentId) {
+  let changed = true;
+  let repaired = false;
+
+  const statusResult = await client.query(
+    `UPDATE tournament_matches
+     SET status = CASE
+           WHEN player1_participant_id IS NOT NULL AND player2_participant_id IS NOT NULL THEN 'running'
+           ELSE 'pending'
+         END,
+         updated_at = NOW()
+     WHERE tournament_id = $1
+       AND winner_participant_id IS NULL
+       AND status = 'completed'
+     RETURNING id`,
+    [tournamentId],
+  );
+
+  if (statusResult.rowCount > 0) {
+    repaired = true;
+  }
+
+  while (changed) {
+    changed = false;
+    const result = await client.query(
+      `SELECT * FROM tournament_matches
+       WHERE tournament_id = $1
+         AND round_number > 1
+         AND winner_participant_id IS NOT NULL
+         AND ((player1_participant_id IS NOT NULL AND player2_participant_id IS NULL)
+           OR (player1_participant_id IS NULL AND player2_participant_id IS NOT NULL))
+       ORDER BY round_number ASC, match_number ASC`,
+      [tournamentId],
+    );
+
+    for (const match of result.rows) {
+      const missingSlot = match.player1_participant_id ? 'p2' : 'p1';
+      const waitsForSource = await missingSlotWaitsForSource(client, tournamentId, match, missingSlot);
+
+      if (!waitsForSource) {
+        continue;
+      }
+
+      await client.query(
+        `UPDATE tournament_matches
+         SET score1 = NULL,
+             score2 = NULL,
+             winner_participant_id = NULL,
+             status = 'pending',
+             updated_at = NOW()
+         WHERE id = $1`,
+        [match.id],
+      );
+      await clearDownstreamSlot(client, tournamentId, match);
+      changed = true;
+      repaired = true;
+    }
+  }
+
+  return repaired;
 }
 
 async function syncTournamentStatus(client, tournamentId) {
@@ -363,6 +449,7 @@ async function regenerateBracket(tournamentId, status = null) {
     }
 
     await autoAdvanceByes(client, tournamentId);
+    await repairPrematureAutoAdvances(client, tournamentId);
 
     if (status) {
       await client.query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
@@ -401,6 +488,7 @@ async function resetBracketResults(tournamentId) {
     );
 
     await autoAdvanceByes(client, tournamentId);
+    await repairPrematureAutoAdvances(client, tournamentId);
     await client.query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
       'running',
       tournamentId,
@@ -514,7 +602,22 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
     }
 
     const participants = await loadParticipants(tournamentId);
-    const matches = await loadMatches(tournamentId);
+    let matches = await loadMatches(tournamentId);
+
+    if (matches.length) {
+      let repaired = false;
+      await withTransaction(async (client) => {
+        repaired = await repairPrematureAutoAdvances(client, tournamentId);
+        if (repaired) {
+          await syncTournamentStatus(client, tournamentId);
+        }
+      });
+
+      if (repaired) {
+        await notifyTournamentUpdated(tournamentId);
+        matches = await loadMatches(tournamentId);
+      }
+    }
 
     const rounds = matches.reduce((groups, match) => {
       if (!groups[match.round_number]) groups[match.round_number] = [];
@@ -819,6 +922,7 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       const score2 = toInt(req.body.score2);
       let winnerSlot = req.body.winner_slot || req.body.winner_override;
       const action = cleanText(req.body.action, 30);
+      const requestedStatus = cleanText(req.body.status, 30);
 
       if (action === 'clear') {
         winnerSlot = '';
@@ -827,7 +931,13 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       }
 
       const winnerId = winnerSlot === 'p1' ? p1Id : winnerSlot === 'p2' ? p2Id : null;
-      const status = winnerId ? 'completed' : cleanText(req.body.status, 30) || (p1Id && p2Id ? 'running' : 'pending');
+      const status = winnerId
+        ? 'completed'
+        : requestedStatus && requestedStatus !== 'completed'
+          ? requestedStatus
+          : p1Id && p2Id
+            ? 'running'
+            : 'pending';
       const changesAffectFuture =
         previousMatch.winner_participant_id !== winnerId ||
         previousMatch.player1_participant_id !== p1Id ||
@@ -870,6 +980,7 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       }
 
       await autoAdvanceByes(client, tournamentId);
+      await repairPrematureAutoAdvances(client, tournamentId);
       await syncTournamentStatus(client, tournamentId);
     });
 
