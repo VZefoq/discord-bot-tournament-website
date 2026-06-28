@@ -50,6 +50,12 @@ button:hover,
   opacity: 0.92;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
 .primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
 }
@@ -279,6 +285,13 @@ label {
   text-decoration: none;
 }
 
+.tournament-card-main {
+  display: block;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
 .tournament-card h3 {
   margin: 0 0 0.5rem;
 }
@@ -301,6 +314,12 @@ label {
   padding: 0.35rem 0.55rem;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.compact-danger {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.55rem 0.75rem;
 }
 
 .empty {
@@ -445,6 +464,46 @@ label {
   margin-bottom: 1rem;
 }
 
+.bracket-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(39, 51, 79, 0.85);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.bracket-controls button {
+  min-width: 38px;
+  min-height: 32px;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.bracket-viewport {
+  max-height: min(72vh, 780px);
+  overflow: auto;
+  border: 1px solid rgba(39, 51, 79, 0.85);
+  border-radius: 26px;
+  cursor: grab;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(148, 163, 184, 0.65) rgba(15, 23, 42, 0.9);
+}
+
+.bracket-viewport.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.bracket-canvas {
+  display: inline-block;
+  min-width: max-content;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 .champion-pill {
   border: 1px solid rgba(69, 212, 131, 0.45);
   border-radius: 999px;
@@ -462,11 +521,9 @@ label {
   grid-template-columns: max-content minmax(240px, 0.72fr) max-content;
   gap: 2.6rem;
   align-items: stretch;
-  overflow-x: auto;
+  overflow: visible;
   min-height: 640px;
   padding: 1.8rem 1rem 2.5rem;
-  border: 1px solid rgba(39, 51, 79, 0.85);
-  border-radius: 26px;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     radial-gradient(circle at center, rgba(111, 122, 138, 0.08), transparent 34rem),
@@ -1037,15 +1094,22 @@ label {
   }
 
   .action-grid,
-  .small-actions {
+  .small-actions,
+  .bracket-controls {
     justify-content: stretch;
   }
 
   .action-grid form,
   .action-grid button,
   .small-actions form,
-  .small-actions button {
+  .small-actions button,
+  .bracket-controls button {
     width: 100%;
+  }
+
+  .bracket-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1061,4 +1125,16 @@ label {
 
 .export-image .challonge-player {
   grid-template-columns: 38px minmax(0, 1fr) 58px;
+}
+
+.export-image .score-chip {
+  min-height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(39, 51, 79, 0.95);
+  border-radius: 9px;
+  background: #0f172a;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 900;
 }

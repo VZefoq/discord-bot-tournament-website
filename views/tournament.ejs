@@ -25,15 +25,22 @@
         <p class="muted">Tournament ID <%= tournament.id %> · <%= participants.length %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %> players</p>
       </div>
       <div class="hero-actions action-grid">
-        <form method="post" action="/tournaments/<%= tournament.id %>/start" onsubmit="return confirm('Start/rebuild this tournament from the current players and seeds?')">
-          <button class="primary" type="submit"><%= matches.length ? 'Rebuild + start' : 'Start tournament' %></button>
-        </form>
         <% if (matches.length) { %>
+          <form method="post" action="/tournaments/<%= tournament.id %>/start" onsubmit="return confirm('Start this tournament with the current bracket?')">
+            <button class="primary" type="submit">Start tournament</button>
+          </form>
+          <form method="post" action="/tournaments/<%= tournament.id %>/regenerate-bracket" onsubmit="return confirm('Rebuild this bracket from the current players and seeds? This clears current match results.')">
+            <button type="submit">Rebuild bracket</button>
+          </form>
           <form method="post" action="/tournaments/<%= tournament.id %>/reset-results" onsubmit="return confirm('Clear all scores and winners but keep the first-round bracket?')">
             <button type="submit">Reset results</button>
           </form>
           <form method="post" action="/tournaments/<%= tournament.id %>/delete-bracket" onsubmit="return confirm('Delete only the bracket? Participants stay saved.')">
             <button class="danger" type="submit">Delete bracket</button>
+          </form>
+        <% } else { %>
+          <form method="post" action="/tournaments/<%= tournament.id %>/regenerate-bracket" onsubmit="return confirm('Generate this bracket from the current players and seeds?')">
+            <button class="primary" type="submit" <%= participants.length < 2 ? 'disabled' : '' %>>Generate bracket</button>
           </form>
         <% } %>
       </div>
@@ -197,7 +204,7 @@
       <% if (matches.length === 0) { %>
         <div class="empty-state-large">
           <h3>No bracket yet</h3>
-          <p>Add at least 2 players, set seeds, then press <strong>Start tournament</strong>.</p>
+          <p>Add at least 2 players, set seeds, then press <strong>Generate bracket</strong>.</p>
         </div>
       <% } else { %>
         <%
@@ -219,52 +226,63 @@
             <span><i class="dot done"></i> Done</span>
             <span><i class="dot pending"></i> Waiting</span>
           </div>
+          <div class="bracket-controls" aria-label="Bracket view controls">
+            <button type="button" data-bracket-zoom="out" title="Zoom out">-</button>
+            <button type="button" data-bracket-zoom="reset" title="Reset view">Reset</button>
+            <button type="button" data-bracket-zoom="in" title="Zoom in">+</button>
+          </div>
           <% if (stats.champion) { %>
             <span class="champion-pill">Champion: <strong><%= stats.champion %></strong></span>
           <% } %>
         </div>
 
-        <div id="bracket-export" class="playoff-bracket challonge-bracket" style="--left-rounds:<%= leftRounds.length || 1 %>; --right-rounds:<%= rightRounds.length || 1 %>;">
-          <div class="bracket-side bracket-left">
-            <% leftRounds.forEach((roundNumber, index) => { %>
-              <% const roundMatches = splitRound(roundNumber, 'left'); %>
-              <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
-                <h3><%= roundLabel(roundNumber, finalRound) %></h3>
-                <div class="visual-round-stack">
-                  <% roundMatches.forEach((match) => { %>
-                    <%- include('partials/bracket-match', { match, tournament, participants, side: 'left' }) %>
-                  <% }) %>
-                </div>
+        <div class="bracket-viewport" id="bracket-viewport">
+          <div class="bracket-canvas" id="bracket-canvas">
+            <div id="bracket-export" class="playoff-bracket challonge-bracket" style="--left-rounds:<%= leftRounds.length || 1 %>; --right-rounds:<%= rightRounds.length || 1 %>;">
+              <div class="bracket-side bracket-left">
+                <% leftRounds.forEach((roundNumber, index) => { %>
+                  <% const roundMatches = splitRound(roundNumber, 'left'); %>
+                  <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
+                    <h3><%= roundLabel(roundNumber, finalRound) %></h3>
+                    <div class="visual-round-stack">
+                      <% roundMatches.forEach((match) => { %>
+                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'left' }) %>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% }) %>
               </div>
-            <% }) %>
-          </div>
 
-          <div class="bracket-final-column">
-            <div class="bracket-title-line"></div>
-            <h3 class="final-heading">Final</h3>
-            <% (rounds[finalRound] || []).forEach((match) => { %>
-              <%- include('partials/bracket-match', { match, tournament, participants, side: 'final' }) %>
-            <% }) %>
-          </div>
-
-          <div class="bracket-side bracket-right">
-            <% rightRounds.forEach((roundNumber, index) => { %>
-              <% const roundMatches = splitRound(roundNumber, 'right'); %>
-              <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
-                <h3><%= roundLabel(roundNumber, finalRound) %></h3>
-                <div class="visual-round-stack">
-                  <% roundMatches.forEach((match) => { %>
-                    <%- include('partials/bracket-match', { match, tournament, participants, side: 'right' }) %>
-                  <% }) %>
-                </div>
+              <div class="bracket-final-column">
+                <div class="bracket-title-line"></div>
+                <h3 class="final-heading">Final</h3>
+                <% (rounds[finalRound] || []).forEach((match) => { %>
+                  <%- include('partials/bracket-match', { match, tournament, participants, side: 'final' }) %>
+                <% }) %>
               </div>
-            <% }) %>
+
+              <div class="bracket-side bracket-right">
+                <% rightRounds.forEach((roundNumber, index) => { %>
+                  <% const roundMatches = splitRound(roundNumber, 'right'); %>
+                  <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
+                    <h3><%= roundLabel(roundNumber, finalRound) %></h3>
+                    <div class="visual-round-stack">
+                      <% roundMatches.forEach((match) => { %>
+                        <%- include('partials/bracket-match', { match, tournament, participants, side: 'right' }) %>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
           </div>
         </div>
       <% } %>
     </section>
   </main>
   <script src="/bracket-download.js"></script>
+  <script src="/bracket-pan.js"></script>
+  <script src="/bracket-scores.js"></script>
   <script src="/tournament-live.js"></script>
 </body>
 </html>

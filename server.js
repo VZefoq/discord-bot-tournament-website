@@ -375,6 +375,14 @@ async function regenerateBracket(tournamentId, status = null) {
   });
 }
 
+async function countMatches(tournamentId) {
+  const result = await query(
+    'SELECT COUNT(*)::int AS match_count FROM tournament_matches WHERE tournament_id = $1',
+    [tournamentId],
+  );
+  return result.rows[0]?.match_count || 0;
+}
+
 async function resetBracketResults(tournamentId) {
   await withTransaction(async (client) => {
     await client.query(
@@ -476,6 +484,25 @@ app.post('/tournaments', requireAuth, async (req, res, next) => {
   }
 });
 
+app.post('/tournaments/:id/delete', requireAuth, async (req, res, next) => {
+  try {
+    const tournamentId = toInt(req.params.id);
+    const tournament = await loadTournament(tournamentId);
+
+    if (!tournament) {
+      res.status(404).send('Tournament not found.');
+      return;
+    }
+
+    await query('DELETE FROM tournaments WHERE id = $1', [tournamentId]);
+    await notifyTournamentUpdated(tournamentId);
+    flash(req, 'success', `Tournament "${tournament.name}" deleted.`);
+    res.redirect('/dashboard');
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
   try {
     const tournamentId = toInt(req.params.id);
@@ -488,6 +515,7 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
 
     const participants = await loadParticipants(tournamentId);
     const matches = await loadMatches(tournamentId);
+
     const rounds = matches.reduce((groups, match) => {
       if (!groups[match.round_number]) groups[match.round_number] = [];
       groups[match.round_number].push(match);
@@ -697,9 +725,21 @@ app.post('/tournaments/:id/start', requireAuth, async (req, res, next) => {
   const tournamentId = toInt(req.params.id);
 
   try {
-    await regenerateBracket(tournamentId, 'running');
+    const matchCount = await countMatches(tournamentId);
+
+    if (matchCount === 0) {
+      flash(req, 'error', 'Generate the bracket before starting the tournament.');
+      res.redirect(`/tournaments/${tournamentId}#bracket`);
+      return;
+    }
+
+    await query('UPDATE tournaments SET status = $1, updated_at = NOW() WHERE id = $2', [
+      'running',
+      tournamentId,
+    ]);
+
     await notifyTournamentUpdated(tournamentId);
-    flash(req, 'success', 'Tournament started with a Challonge-style seeded bracket.');
+    flash(req, 'success', 'Tournament started. The existing bracket was kept.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);
   } catch (error) {
     flash(req, 'error', error.message || 'Could not start tournament.');
@@ -711,7 +751,7 @@ app.post('/tournaments/:id/regenerate-bracket', requireAuth, async (req, res) =>
   const tournamentId = toInt(req.params.id);
 
   try {
-    await regenerateBracket(tournamentId, 'running');
+    await regenerateBracket(tournamentId);
     await notifyTournamentUpdated(tournamentId);
     flash(req, 'success', 'Bracket rebuilt from the current players and seeds.');
     res.redirect(`/tournaments/${tournamentId}#bracket`);

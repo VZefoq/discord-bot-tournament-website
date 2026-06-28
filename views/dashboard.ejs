@@ -70,17 +70,22 @@
       <% } else { %>
         <div class="cards">
           <% tournaments.forEach((tournament) => { %>
-            <a class="tournament-card" href="/tournaments/<%= tournament.id %>">
-              <div>
-                <h3><%= tournament.name %></h3>
-                <p><%= tournament.description || 'No description.' %></p>
-              </div>
+            <article class="tournament-card">
+              <a class="tournament-card-main" href="/tournaments/<%= tournament.id %>">
+                <div>
+                  <h3><%= tournament.name %></h3>
+                  <p><%= tournament.description || 'No description.' %></p>
+                </div>
+              </a>
               <div class="card-meta">
                 <span>Status: <strong><%= tournament.status %></strong></span>
                 <span>Players: <strong><%= tournament.participant_count %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %></strong></span>
                 <span>Matches: <strong><%= tournament.match_count %></strong></span>
               </div>
-            </a>
+              <form method="post" action="/tournaments/<%= tournament.id %>/delete" onsubmit="return confirm('Delete this tournament, its players, and its bracket?')">
+                <button class="danger compact-danger" type="submit">Delete tournament</button>
+              </form>
+            </article>
           <% }) %>
         </div>
       <% } %>
