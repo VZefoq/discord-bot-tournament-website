@@ -153,8 +153,8 @@ function matchTitle(match, finalRound) {
 function normalizeTournamentStatus(status) {
   const value = cleanText(status, 30).toLowerCase();
 
-  if (['running', 'ongoing'].includes(value)) return 'ongoing';
-  if (['completed', 'ended'].includes(value)) return 'ended';
+  if (['closed', 'running', 'ongoing'].includes(value)) return 'ongoing';
+  if (['completed', 'cancelled', 'ended'].includes(value)) return 'ended';
   return 'open';
 }
 
