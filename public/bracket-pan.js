@@ -64,6 +64,20 @@
     viewport.scrollTop = (centerY / previousScale) * scale - viewport.clientHeight / 2;
   }
 
+  function zoomAtPoint(nextScale, clientX, clientY) {
+    const previousScale = scale;
+    const rect = viewport.getBoundingClientRect();
+    const viewportX = clientX - rect.left;
+    const viewportY = clientY - rect.top;
+    const worldX = viewport.scrollLeft + viewportX;
+    const worldY = viewport.scrollTop + viewportY;
+
+    scale = Math.min(maxScale, Math.max(minScale, nextScale));
+    updateCanvasSize();
+    viewport.scrollLeft = (worldX / previousScale) * scale - viewportX;
+    viewport.scrollTop = (worldY / previousScale) * scale - viewportY;
+  }
+
   viewport.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || event.target.closest(interactiveSelector)) return;
 
@@ -95,6 +109,16 @@
 
   viewport.addEventListener('pointerup', stopDragging);
   viewport.addEventListener('pointercancel', stopDragging);
+
+  viewport.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      const zoomStep = event.deltaY > 0 ? -0.1 : 0.1;
+      zoomAtPoint(scale + zoomStep, event.clientX, event.clientY);
+    },
+    { passive: false },
+  );
 
   document.querySelectorAll('[data-bracket-zoom]').forEach((button) => {
     button.addEventListener('click', () => {
