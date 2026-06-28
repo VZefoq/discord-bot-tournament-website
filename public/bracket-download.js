@@ -99,9 +99,14 @@
       const clone = bracket.cloneNode(true);
       clone.classList.add('export-image');
       sanitizeClone(clone);
+      clone.style.position = '';
+      clone.style.left = '';
+      clone.style.top = '';
+      clone.style.transform = '';
+      clone.style.transformOrigin = '';
 
-      const width = Math.max(bracket.scrollWidth, bracket.offsetWidth, 1);
-      const height = Math.max(bracket.scrollHeight, bracket.offsetHeight, 1);
+      const width = Math.max(bracket.offsetWidth, bracket.scrollWidth, 1);
+      const height = Math.max(bracket.offsetHeight, bracket.scrollHeight, 1);
       clone.style.width = `${width}px`;
       clone.style.height = `${height}px`;
       clone.style.overflow = 'visible';
@@ -139,8 +144,13 @@
         const clone = bracket.cloneNode(true);
         clone.classList.add('export-image');
         sanitizeClone(clone);
-        const width = Math.max(bracket.scrollWidth, bracket.offsetWidth, 1);
-        const height = Math.max(bracket.scrollHeight, bracket.offsetHeight, 1);
+        clone.style.position = '';
+        clone.style.left = '';
+        clone.style.top = '';
+        clone.style.transform = '';
+        clone.style.transformOrigin = '';
+        const width = Math.max(bracket.offsetWidth, bracket.scrollWidth, 1);
+        const height = Math.max(bracket.offsetHeight, bracket.scrollHeight, 1);
         clone.style.width = `${width}px`;
         clone.style.height = `${height}px`;
         const svg = makeSvg(clone, width, height);

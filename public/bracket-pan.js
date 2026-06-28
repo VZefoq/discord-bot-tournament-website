@@ -8,27 +8,39 @@
   const interactiveSelector = 'a, button, input, select, textarea, summary, details, label';
   const minScale = 0.2;
   const maxScale = 1.85;
+  const minWorldPadding = 900;
   let scale = 1;
   let dragStart = null;
 
   function getBracketSize() {
     return {
-      width: bracket.scrollWidth || bracket.offsetWidth || 1,
-      height: bracket.scrollHeight || bracket.offsetHeight || 1,
+      width: bracket.offsetWidth || bracket.scrollWidth || 1,
+      height: bracket.offsetHeight || bracket.scrollHeight || 1,
     };
+  }
+
+  function getWorldPadding() {
+    return Math.max(minWorldPadding, Math.ceil(Math.max(viewport.clientWidth, viewport.clientHeight) * 0.85));
   }
 
   function updateCanvasSize() {
     const { width, height } = getBracketSize();
-    canvas.style.width = `${Math.ceil(width * scale)}px`;
-    canvas.style.height = `${Math.ceil(height * scale)}px`;
-    canvas.style.transform = `scale(${scale})`;
+    const padding = getWorldPadding();
+    canvas.style.width = `${Math.ceil((width + padding * 2) * scale)}px`;
+    canvas.style.height = `${Math.ceil((height + padding * 2) * scale)}px`;
+    canvas.style.transform = 'none';
+    bracket.style.position = 'absolute';
+    bracket.style.left = `${Math.ceil(padding * scale)}px`;
+    bracket.style.top = `${Math.ceil(padding * scale)}px`;
+    bracket.style.transform = `scale(${scale})`;
+    bracket.style.transformOrigin = '0 0';
+    return { width, height, padding };
   }
 
   function centerBracket() {
-    updateCanvasSize();
-    viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-    viewport.scrollTop = 0;
+    const { width, padding } = updateCanvasSize();
+    viewport.scrollLeft = Math.max(0, padding * scale + (width * scale - viewport.clientWidth) / 2);
+    viewport.scrollTop = Math.max(0, padding * scale - 24);
   }
 
   function fitBracket() {
@@ -37,9 +49,9 @@
     const availableHeight = Math.max(1, viewport.clientHeight - 28);
     const nextScale = Math.min(1, availableWidth / width, availableHeight / height);
     scale = Math.max(minScale, Math.min(maxScale, nextScale));
-    updateCanvasSize();
-    viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-    viewport.scrollTop = 0;
+    const { padding } = updateCanvasSize();
+    viewport.scrollLeft = Math.max(0, padding * scale - (viewport.clientWidth - width * scale) / 2);
+    viewport.scrollTop = Math.max(0, padding * scale - (viewport.clientHeight - height * scale) / 2);
   }
 
   function setScale(nextScale) {
