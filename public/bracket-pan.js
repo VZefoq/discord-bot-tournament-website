@@ -207,6 +207,10 @@
 
   window.addEventListener('beforeunload', saveState);
   window.addEventListener('resize', fitBracket);
+  document.addEventListener('bracket:content-updated', () => {
+    updateCanvasSize();
+    saveState();
+  });
   requestAnimationFrame(() => {
     if (!restoreState()) {
       fitBracket();

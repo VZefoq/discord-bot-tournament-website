@@ -1012,9 +1012,20 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
     });
 
     await notifyTournamentUpdated(tournamentId);
+
+    if (wantsJson(req)) {
+      res.json({ ok: true, tournamentId, matchId });
+      return;
+    }
+
     flash(req, 'success', 'Match updated. The next round was synced automatically.');
     res.redirect(`/tournaments/${tournamentId}#match-${matchId}`);
   } catch (error) {
+    if (wantsJson(req)) {
+      res.status(500).json({ ok: false, message: error.message || 'Could not update match.' });
+      return;
+    }
+
     next(error);
   }
 });

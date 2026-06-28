@@ -3,13 +3,20 @@
 
   if (!bracket) return;
 
-  let svg = bracket.querySelector('.bracket-lines');
+  let svg = null;
 
-  if (!svg) {
+  function ensureSvg() {
+    if (svg && svg.isConnected) return svg;
+
+    svg = bracket.querySelector('.bracket-lines');
+    if (svg) return svg;
+
     svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.classList.add('bracket-lines');
     svg.setAttribute('aria-hidden', 'true');
     bracket.prepend(svg);
+
+    return svg;
   }
 
   function currentScale() {
@@ -36,16 +43,17 @@
   }
 
   function drawConnectors() {
+    const lineLayer = ensureSvg();
     const scale = currentScale();
     const bracketRect = bracket.getBoundingClientRect();
     const width = bracket.scrollWidth || bracket.offsetWidth;
     const height = bracket.scrollHeight || bracket.offsetHeight;
     const matches = Array.from(bracket.querySelectorAll('.visual-match[data-round][data-match]'));
 
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', height);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.replaceChildren();
+    lineLayer.setAttribute('width', width);
+    lineLayer.setAttribute('height', height);
+    lineLayer.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    lineLayer.replaceChildren();
 
     matches.forEach((match) => {
       const round = Number(match.dataset.round);
@@ -67,12 +75,13 @@
 
       path.setAttribute('d', `M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`);
       path.setAttribute('class', 'bracket-connector');
-      svg.appendChild(path);
+      lineLayer.appendChild(path);
     });
   }
 
   window.addEventListener('resize', drawConnectors);
   window.addEventListener('load', drawConnectors);
+  document.addEventListener('bracket:content-updated', drawConnectors);
   document.addEventListener('bracket:view-updated', drawConnectors);
   requestAnimationFrame(drawConnectors);
 })();
