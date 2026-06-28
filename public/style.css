@@ -1137,6 +1137,170 @@ label {
   content: "" !important;
 }
 
+/* Compact left-to-right bracket, closer to Challonge's bracket view. */
+.challonge-bracket {
+  --match-width: 268px;
+  --match-height: 128px;
+  --connector: 34px;
+  display: grid;
+  grid-template-columns: repeat(var(--rounds), var(--match-width));
+  column-gap: var(--connector);
+  align-items: stretch;
+  width: max-content;
+  min-height: max(620px, calc(var(--base-matches) * 92px));
+  padding: 1.6rem 2rem 2rem;
+}
+
+.challonge-bracket .visual-round {
+  min-height: inherit;
+}
+
+.challonge-bracket .visual-round h3 {
+  margin-bottom: 1.1rem;
+  text-align: left;
+  color: #b9c0ca;
+  font-size: 0.78rem;
+}
+
+.challonge-bracket .visual-round-stack {
+  min-height: calc(100% - 2.2rem);
+  justify-content: space-around;
+  gap: 1rem;
+}
+
+.challonge-bracket .visual-match {
+  width: var(--match-width);
+  min-height: var(--match-height);
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.challonge-bracket .visual-round:not(:last-child) .visual-match::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(var(--connector) * -1);
+  width: var(--connector);
+  height: 2px;
+  background: rgba(190, 198, 209, 0.72);
+}
+
+.challonge-bracket .visual-match-meta {
+  min-height: 22px;
+  padding: 0 0.35rem;
+  color: #d3d8df;
+  background: rgba(17, 24, 39, 0.82);
+  border-radius: 4px 4px 0 0;
+  font-size: 0.68rem;
+}
+
+.challonge-bracket .status {
+  padding: 0.15rem 0.42rem;
+  font-size: 0.62rem;
+}
+
+.challonge-player {
+  grid-template-columns: 32px minmax(0, 1fr) 42px;
+  min-height: 32px;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid rgba(7, 10, 16, 0.8);
+  border-radius: 0;
+  background: #6c7074;
+}
+
+.challonge-player:nth-of-type(odd) {
+  background: #777b7f;
+}
+
+.challonge-player.winner-slot {
+  background: #7d8386;
+  border-color: rgba(7, 10, 16, 0.8);
+}
+
+.challonge-player.empty-slot {
+  opacity: 0.42;
+}
+
+.challonge-player .win-button {
+  width: 28px;
+  height: 26px;
+  margin: 0 0.2rem;
+  border-radius: 3px;
+  color: #eafff0;
+  background: rgba(12, 92, 52, 0.72);
+  border: 1px solid rgba(88, 205, 132, 0.5);
+  font-size: 0;
+}
+
+.challonge-player .win-button::before {
+  content: "W";
+  font-size: 0.68rem;
+}
+
+.challonge-player .seed-badge {
+  display: none;
+}
+
+.challonge-player .player-name {
+  padding: 0 0.35rem;
+}
+
+.challonge-player .player-name strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  line-height: 1.05;
+}
+
+.challonge-player .player-name small {
+  color: rgba(248, 250, 252, 0.62);
+  font-size: 0.62rem;
+}
+
+.challonge-player .score-input {
+  min-height: 32px;
+  height: 32px;
+  border: 0;
+  border-left: 1px solid rgba(7, 10, 16, 0.8);
+  border-radius: 0;
+  background: #9ca3af;
+  color: #111827;
+}
+
+.challonge-player.winner-slot .score-input {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.challonge-bracket .match-report-actions {
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem;
+  padding-top: 0.28rem;
+}
+
+.challonge-bracket .save-match,
+.challonge-bracket .undo-match {
+  min-height: 26px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+}
+
+.challonge-bracket .visual-match-edit {
+  margin-top: 0.2rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.challonge-bracket .visual-match-edit summary {
+  font-size: 0.66rem;
+}
+
 .export-image .win-button,
 .export-image .match-report-actions,
 .export-image .visual-match-edit {

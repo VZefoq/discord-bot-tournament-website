@@ -9,7 +9,7 @@
   const minScale = 0.2;
   const maxScale = 1.85;
   const minWorldPadding = 900;
-  const stateKey = `bracket-view:${window.location.pathname}`;
+  const stateKey = `bracket-view:v2:${window.location.pathname}`;
   let scale = 1;
   let dragStart = null;
   let saveTimer = null;
