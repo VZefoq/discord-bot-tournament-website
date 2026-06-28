@@ -1137,11 +1137,11 @@ label {
   content: "" !important;
 }
 
-/* Compact left-to-right bracket, closer to Challonge's bracket view. */
+/* Compact left-to-right bracket using the dashboard's own visual style. */
 .challonge-bracket {
-  --match-width: 268px;
-  --match-height: 128px;
-  --connector: 34px;
+  --match-width: 304px;
+  --match-height: 170px;
+  --connector: 46px;
   display: grid;
   grid-template-columns: repeat(var(--rounds), var(--match-width));
   column-gap: var(--connector);
@@ -1171,12 +1171,12 @@ label {
 .challonge-bracket .visual-match {
   width: var(--match-width);
   min-height: var(--match-height);
-  gap: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  box-shadow: none;
+  gap: 0.48rem;
+  padding: 0.62rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(11, 16, 32, 0.98));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
 }
 
 .challonge-bracket .visual-round:not(:last-child) .visual-match::after {
@@ -1186,119 +1186,113 @@ label {
   right: calc(var(--connector) * -1);
   width: var(--connector);
   height: 2px;
-  background: rgba(190, 198, 209, 0.72);
+  background: rgba(148, 163, 184, 0.72);
 }
 
 .challonge-bracket .visual-match-meta {
-  min-height: 22px;
-  padding: 0 0.35rem;
-  color: #d3d8df;
-  background: rgba(17, 24, 39, 0.82);
-  border-radius: 4px 4px 0 0;
-  font-size: 0.68rem;
+  min-height: auto;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border-radius: 0;
+  font-size: 0.72rem;
 }
 
 .challonge-bracket .status {
-  padding: 0.15rem 0.42rem;
-  font-size: 0.62rem;
-}
-
-.challonge-player {
-  grid-template-columns: 32px minmax(0, 1fr) 42px;
-  min-height: 32px;
-  gap: 0;
-  padding: 0;
-  border: 0;
-  border-top: 1px solid rgba(7, 10, 16, 0.8);
-  border-radius: 0;
-  background: #6c7074;
-}
-
-.challonge-player:nth-of-type(odd) {
-  background: #777b7f;
-}
-
-.challonge-player.winner-slot {
-  background: #7d8386;
-  border-color: rgba(7, 10, 16, 0.8);
-}
-
-.challonge-player.empty-slot {
-  opacity: 0.42;
-}
-
-.challonge-player .win-button {
-  width: 28px;
-  height: 26px;
-  margin: 0 0.2rem;
-  border-radius: 3px;
-  color: #eafff0;
-  background: rgba(12, 92, 52, 0.72);
-  border: 1px solid rgba(88, 205, 132, 0.5);
-  font-size: 0;
-}
-
-.challonge-player .win-button::before {
-  content: "W";
+  padding: 0.22rem 0.48rem;
   font-size: 0.68rem;
 }
 
+.challonge-player {
+  grid-template-columns: 38px 34px minmax(0, 1fr) 52px;
+  min-height: 40px;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(39, 51, 79, 0.95);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.challonge-player.winner-slot {
+  border-color: rgba(69, 212, 131, 0.72);
+  background: rgba(69, 212, 131, 0.1);
+}
+
+.challonge-player.empty-slot {
+  opacity: 0.58;
+}
+
+.challonge-player .win-button {
+  width: 38px;
+  height: 28px;
+  margin: 0;
+  border-radius: 8px;
+  color: #b9ffd4;
+  background: rgba(69, 212, 131, 0.16);
+  border: 1px solid rgba(69, 212, 131, 0.35);
+  font-size: 0.7rem;
+}
+
 .challonge-player .seed-badge {
-  display: none;
+  display: inline-grid;
+  min-width: 30px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 0.74rem;
 }
 
 .challonge-player .player-name {
-  padding: 0 0.35rem;
+  padding: 0;
 }
 
 .challonge-player .player-name strong {
-  color: #f8fafc;
-  font-size: 0.82rem;
-  line-height: 1.05;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.1;
 }
 
 .challonge-player .player-name small {
-  color: rgba(248, 250, 252, 0.62);
-  font-size: 0.62rem;
+  color: var(--muted);
+  font-size: 0.68rem;
 }
 
 .challonge-player .score-input {
   min-height: 32px;
   height: 32px;
-  border: 0;
-  border-left: 1px solid rgba(7, 10, 16, 0.8);
-  border-radius: 0;
-  background: #9ca3af;
-  color: #111827;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0f172a;
+  color: var(--text);
 }
 
 .challonge-player.winner-slot .score-input {
-  background: #f59e0b;
-  color: #111827;
+  border-color: rgba(69, 212, 131, 0.35);
+  background: rgba(15, 23, 42, 0.94);
+  color: var(--text);
 }
 
 .challonge-bracket .match-report-actions {
   grid-template-columns: 1fr auto;
-  gap: 0.25rem;
-  padding-top: 0.28rem;
+  gap: 0.45rem;
+  padding-top: 0;
 }
 
 .challonge-bracket .save-match,
 .challonge-bracket .undo-match {
-  min-height: 26px;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.68rem;
+  min-height: 32px;
+  padding: 0.4rem 0.58rem;
+  border-radius: 9px;
+  font-size: 0.76rem;
 }
 
 .challonge-bracket .visual-match-edit {
   margin-top: 0.2rem;
-  padding-top: 0.15rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  padding-top: 0.22rem;
+  border-top: 1px solid rgba(39, 51, 79, 0.65);
 }
 
 .challonge-bracket .visual-match-edit summary {
-  font-size: 0.66rem;
+  font-size: 0.72rem;
 }
 
 .export-image .win-button,
