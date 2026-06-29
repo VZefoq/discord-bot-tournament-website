@@ -22,7 +22,11 @@
       panel.hidden = panel.dataset.tabPanel !== tabName;
     });
 
-    document.dispatchEvent(new CustomEvent('bracket:view-updated'));
+    if (tabName === 'bracket') {
+      document.dispatchEvent(new CustomEvent('bracket:tab-opened'));
+      document.dispatchEvent(new CustomEvent('bracket:content-updated'));
+      document.dispatchEvent(new CustomEvent('bracket:view-updated'));
+    }
   }
 
   async function copyLink(button) {

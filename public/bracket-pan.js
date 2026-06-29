@@ -10,6 +10,11 @@
   const stateKey = `bracket-view:v3:${window.location.pathname}`;
   let dragStart = null;
   let saveTimer = null;
+  let initialized = false;
+
+  function viewportIsVisible() {
+    return viewport.clientWidth > 0 && viewport.clientHeight > 0;
+  }
 
   function getBracketSize() {
     return {
@@ -136,16 +141,37 @@
 
   window.addEventListener('beforeunload', saveState);
   window.addEventListener('resize', () => {
+    if (!viewportIsVisible()) return;
     updateCanvasSize();
     scheduleSave();
   });
   document.addEventListener('bracket:content-updated', () => {
+    if (!viewportIsVisible()) return;
     updateCanvasSize();
     saveState();
   });
-  requestAnimationFrame(() => {
+  function initializeView() {
+    if (!viewportIsVisible()) return;
+
+    initialized = true;
     if (!restoreState()) {
       centerBracket();
     }
+  }
+
+  document.addEventListener('bracket:tab-opened', () => {
+    if (!initialized) {
+      initializeView();
+      return;
+    }
+
+    updateCanvasSize();
+    if (viewport.scrollLeft < 8 && viewport.scrollTop < 8) {
+      centerBracket();
+    } else {
+      scheduleSave();
+    }
   });
+
+  requestAnimationFrame(initializeView);
 })();

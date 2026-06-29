@@ -14,6 +14,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-before-hosting';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.set('trust proxy', 1);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -69,6 +70,10 @@ function cleanText(value, max = 2000) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
+function cleanToken(value) {
+  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+}
+
 function cleanMultiline(value, max = 2000) {
   return String(value || '')
     .replace(/\r\n/g, '\n')
@@ -105,6 +110,14 @@ function participantLabel(participant) {
 function shortParticipantLabel(participant) {
   if (!participant) return '';
   return participant.roblox_username || participant.discord_username || '';
+}
+
+function createPublicToken() {
+  return crypto.randomBytes(18).toString('base64url');
+}
+
+function absoluteUrl(req, pathname) {
+  return `${req.protocol}://${req.get('host')}${pathname}`;
 }
 
 function nextPowerOfTwo(value) {
@@ -170,6 +183,43 @@ function displayTournamentStatus(status) {
 async function loadTournament(id) {
   const result = await query('SELECT * FROM tournaments WHERE id = $1', [id]);
   return result.rows[0] || null;
+}
+
+async function loadTournamentByPublicToken(token) {
+  const result = await query('SELECT * FROM tournaments WHERE public_token = $1', [token]);
+  return result.rows[0] || null;
+}
+
+async function ensureTournamentPublicToken(tournament) {
+  if (tournament.public_token) return tournament.public_token;
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const token = createPublicToken();
+
+    try {
+      const result = await query(
+        `UPDATE tournaments
+         SET public_token = $1, updated_at = NOW()
+         WHERE id = $2 AND public_token IS NULL
+         RETURNING public_token`,
+        [token, tournament.id],
+      );
+
+      if (!result.rows[0]) {
+        const current = await loadTournament(tournament.id);
+        tournament.public_token = current?.public_token || '';
+        if (tournament.public_token) return tournament.public_token;
+        continue;
+      }
+
+      tournament.public_token = result.rows[0].public_token;
+      return tournament.public_token;
+    } catch (error) {
+      if (error.code !== '23505') throw error;
+    }
+  }
+
+  throw new Error('Could not create a unique live bracket link.');
 }
 
 async function touchTournament(tournamentId) {
@@ -520,6 +570,59 @@ async function resetBracketResults(tournamentId) {
   });
 }
 
+async function buildTournamentViewData(tournament) {
+  const participants = await loadParticipants(tournament.id);
+  let matches = await loadMatches(tournament.id);
+
+  if (matches.length) {
+    let repaired = false;
+    await withTransaction(async (client) => {
+      repaired = await repairPrematureAutoAdvances(client, tournament.id);
+      if (repaired) {
+        await syncTournamentStatus(client, tournament.id);
+      }
+    });
+
+    if (repaired) {
+      await notifyTournamentUpdated(tournament.id);
+      matches = await loadMatches(tournament.id);
+    }
+  }
+
+  const rounds = matches.reduce((groups, match) => {
+    if (!groups[match.round_number]) groups[match.round_number] = [];
+    groups[match.round_number].push(match);
+    return groups;
+  }, {});
+  const completedMatches = matches.filter((match) => match.status === 'completed').length;
+  const readyMatches = matches.filter(
+    (match) => match.player1_participant_id && match.player2_participant_id && !match.winner_participant_id,
+  ).length;
+  const finalRound = matches.reduce((max, match) => Math.max(max, match.round_number), 0);
+  const championMatch = matches.find(
+    (match) => match.round_number === finalRound && match.winner_participant_id,
+  );
+
+  return {
+    tournament,
+    participants,
+    matches,
+    rounds,
+    stats: {
+      completedMatches,
+      readyMatches,
+      totalMatches: matches.length,
+      progress: matches.length ? Math.round((completedMatches / matches.length) * 100) : 0,
+      champion: championMatch?.winner_label || '',
+    },
+    roundLabel,
+    matchTitle,
+    normalizeTournamentStatus,
+    displayTournamentStatus,
+    datetimeLocalValue,
+  };
+}
+
 app.get('/login', (req, res) => {
   if (req.session.user) {
     res.redirect('/dashboard');
@@ -551,6 +654,29 @@ app.get('/', (req, res) => {
   res.redirect(req.session.user ? '/dashboard' : '/login');
 });
 
+app.get('/brackets/:token', async (req, res, next) => {
+  try {
+    const token = cleanToken(req.params.token);
+    const tournament = token ? await loadTournamentByPublicToken(token) : null;
+
+    if (!tournament) {
+      res.status(404).send('Live bracket not found.');
+      return;
+    }
+
+    const viewData = await buildTournamentViewData(tournament);
+
+    if (req.query.partial === '1') {
+      res.render('partials/bracket-board', { ...viewData, readOnly: true });
+      return;
+    }
+
+    res.render('bracket-live', viewData);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/dashboard', requireAuth, async (req, res, next) => {
   try {
     const result = await query(
@@ -580,13 +706,14 @@ app.post('/tournaments', requireAuth, async (req, res, next) => {
     const maxParticipants = toInt(req.body.max_participants);
     const defaultRegion = cleanText(req.body.default_region, 50);
     const signupClosesAt = toDateOrNull(req.body.signup_closes_at);
+    const publicToken = createPublicToken();
 
     const result = await query(
       `INSERT INTO tournaments
-        (guild_id, name, description, rules, prize, status, max_participants, default_region, signup_closes_at)
-       VALUES ('dashboard', $1, $2, $3, $4, 'open', $5, $6, $7)
+        (guild_id, name, description, rules, prize, status, public_token, max_participants, default_region, signup_closes_at)
+       VALUES ('dashboard', $1, $2, $3, $4, 'open', $5, $6, $7, $8)
        RETURNING id`,
-      [name, description, rules, prize, maxParticipants, defaultRegion, signupClosesAt],
+      [name, description, rules, prize, publicToken, maxParticipants, defaultRegion, signupClosesAt],
     );
 
     flash(req, 'success', 'Tournament created. Add players, seed them, then start the bracket.');
@@ -625,56 +752,12 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
       return;
     }
 
-    const participants = await loadParticipants(tournamentId);
-    let matches = await loadMatches(tournamentId);
-
-    if (matches.length) {
-      let repaired = false;
-      await withTransaction(async (client) => {
-        repaired = await repairPrematureAutoAdvances(client, tournamentId);
-        if (repaired) {
-          await syncTournamentStatus(client, tournamentId);
-        }
-      });
-
-      if (repaired) {
-        await notifyTournamentUpdated(tournamentId);
-        matches = await loadMatches(tournamentId);
-      }
-    }
-
-    const rounds = matches.reduce((groups, match) => {
-      if (!groups[match.round_number]) groups[match.round_number] = [];
-      groups[match.round_number].push(match);
-      return groups;
-    }, {});
-    const completedMatches = matches.filter((match) => match.status === 'completed').length;
-    const readyMatches = matches.filter(
-      (match) => match.player1_participant_id && match.player2_participant_id && !match.winner_participant_id,
-    ).length;
-    const finalRound = matches.reduce((max, match) => Math.max(max, match.round_number), 0);
-    const championMatch = matches.find(
-      (match) => match.round_number === finalRound && match.winner_participant_id,
-    );
-    const stats = {
-      completedMatches,
-      readyMatches,
-      totalMatches: matches.length,
-      progress: matches.length ? Math.round((completedMatches / matches.length) * 100) : 0,
-      champion: championMatch?.winner_label || '',
-    };
+    const publicToken = await ensureTournamentPublicToken(tournament);
+    const viewData = await buildTournamentViewData(tournament);
 
     res.render('tournament', {
-      tournament,
-      participants,
-      matches,
-      rounds,
-      stats,
-      roundLabel,
-      matchTitle,
-      normalizeTournamentStatus,
-      displayTournamentStatus,
-      datetimeLocalValue,
+      ...viewData,
+      liveBracketUrl: absoluteUrl(req, `/brackets/${publicToken}`),
     });
   } catch (error) {
     next(error);
