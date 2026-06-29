@@ -6,8 +6,8 @@
   if (!viewport || !canvas || !bracket) return;
 
   const interactiveSelector = 'a, button, input, select, textarea, summary, details, label';
-  const minWorldPadding = 900;
-  const stateKey = `bracket-view:v3:${window.location.pathname}`;
+  const edgePadding = 28;
+  const stateKey = `bracket-view:v4:${window.location.pathname}`;
   let dragStart = null;
   let saveTimer = null;
   let initialized = false;
@@ -24,7 +24,9 @@
   }
 
   function getWorldPadding() {
-    return Math.max(minWorldPadding, Math.ceil(Math.max(viewport.clientWidth, viewport.clientHeight) * 0.85));
+    // Keep only a small gutter around the real bracket. The old large world
+    // padding made the viewport scroll into big empty areas.
+    return edgePadding;
   }
 
   function updateCanvasSize() {
@@ -88,10 +90,10 @@
     return true;
   }
 
-  function centerBracket() {
-    const { padding } = updateCanvasSize();
-    viewport.scrollLeft = Math.max(0, padding - 24);
-    viewport.scrollTop = Math.max(0, padding - 24);
+  function showBracketStart() {
+    updateCanvasSize();
+    viewport.scrollLeft = 0;
+    viewport.scrollTop = 0;
     scheduleSave();
   }
 
@@ -155,7 +157,7 @@
 
     initialized = true;
     if (!restoreState()) {
-      centerBracket();
+      showBracketStart();
     }
   }
 
@@ -167,7 +169,7 @@
 
     updateCanvasSize();
     if (viewport.scrollLeft < 8 && viewport.scrollTop < 8) {
-      centerBracket();
+      showBracketStart();
     } else {
       scheduleSave();
     }
