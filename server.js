@@ -1143,7 +1143,7 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       let score1 = toInt(req.body.score1);
       let score2 = toInt(req.body.score2);
       let winnerSlot = '';
-      const action = cleanText(req.body.action, 30);
+      const action = cleanText(req.body.match_action || req.body.action, 30);
       const requestedStatus = cleanText(req.body.status, 30);
 
       if (score1 !== null && score2 === null && cleanText(req.body.score2, 20) === '') {

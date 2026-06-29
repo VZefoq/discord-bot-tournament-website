@@ -110,6 +110,11 @@
     document.dispatchEvent(new CustomEvent('bracket:view-updated'));
   }
 
+  function formActionUrl(form) {
+    const action = form.getAttribute('action') || window.location.pathname;
+    return new URL(action, window.location.href).toString();
+  }
+
   async function submitForm(form) {
     if (pendingForms.has(form)) {
       queuedForms.add(form);
@@ -120,7 +125,7 @@
     form.classList.add('is-saving');
 
     try {
-      const response = await fetch(form.action, {
+      const response = await fetch(formActionUrl(form), {
         method: 'POST',
         headers: {
           Accept: 'application/json',

@@ -21,7 +21,7 @@
     <input type="hidden" name="player2_name" value="<%= match.player2_name || '' %>">
     <input type="hidden" name="status" value="<%= match.status || '' %>">
     <input type="hidden" name="winner_override" value="<%= p1Winner ? 'p1' : p2Winner ? 'p2' : '' %>">
-    <input type="hidden" name="action" value="score">
+    <input type="hidden" name="match_action" value="score">
   <% } %>
 
   <div class="challonge-player <%= p1Winner ? 'winner-slot' : '' %> <%= !match.player1_participant_id ? 'empty-slot' : '' %>">

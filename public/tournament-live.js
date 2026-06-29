@@ -15,6 +15,11 @@
     state.dataset.mode = mode || '';
   }
 
+  function formActionUrl(formElement) {
+    const action = formElement.getAttribute('action') || window.location.pathname;
+    return new URL(action, window.location.href).toString();
+  }
+
   async function saveNow() {
     const formData = new FormData(form);
     const serialized = new URLSearchParams(formData).toString();
@@ -28,7 +33,7 @@
     setState('Saving', 'saving');
 
     try {
-      const response = await fetch(form.action, {
+      const response = await fetch(formActionUrl(form), {
         method: 'POST',
         headers: {
           Accept: 'application/json',
