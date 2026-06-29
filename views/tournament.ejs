@@ -74,6 +74,12 @@
 
     <div class="tournament-tab-shell">
       <nav class="tournament-tabs" aria-label="Tournament sections">
+        <a class="is-active" href="#bracket" data-tab-link="bracket" aria-current="page">
+          <span class="tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 5h6v4H4z"/><path d="M14 3h6v4h-6z"/><path d="M14 11h6v4h-6z"/><path d="M14 19h6v2h-6z"/><path d="M10 7h2a2 2 0 0 1 2 2v4"/><path d="M10 7h2a2 2 0 0 0 2-2"/><path d="M14 13v7"/></svg>
+          </span>
+          <span>Bracket</span>
+        </a>
         <a href="#settings" data-tab-link="settings">
           <span class="tab-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a8.1 8.1 0 0 0 .1-1 8.1 8.1 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7.1 7.1 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a7.1 7.1 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a8.1 8.1 0 0 0-.1 1 8.1 8.1 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7.1 7.1 0 0 0 1.7 1l.3 2.6h4l.3-2.6a7.1 7.1 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/></svg>
@@ -86,16 +92,10 @@
           </span>
           <span>Participants</span>
         </a>
-        <a href="#bracket" data-tab-link="bracket">
-          <span class="tab-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M4 5h6v4H4z"/><path d="M14 3h6v4h-6z"/><path d="M14 11h6v4h-6z"/><path d="M14 19h6v2h-6z"/><path d="M10 7h2a2 2 0 0 1 2 2v4"/><path d="M10 7h2a2 2 0 0 0 2-2"/><path d="M14 13v7"/></svg>
-          </span>
-          <span>Bracket</span>
-        </a>
       </nav>
 
       <section class="panel tournament-tabs-panel">
-      <section class="tab-panel" id="settings" data-tab-panel="settings">
+      <section class="tab-panel" id="settings" data-tab-panel="settings" hidden>
         <div class="section-title">
           <h2>Settings</h2>
           <span class="pill" id="settings-save-state">Live save ready</span>
@@ -145,7 +145,7 @@
         </form>
       </section>
 
-      <section class="tab-panel" id="participants" data-tab-panel="participants">
+      <section class="tab-panel" id="participants" data-tab-panel="participants" hidden>
         <div class="section-title wrap-title">
           <div>
             <h2>Participants & seeds</h2>
