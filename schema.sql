@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS tournament_participants (
   discord_id TEXT NOT NULL,
   discord_username TEXT NOT NULL,
   roblox_username TEXT NOT NULL,
+  roblox_display_name TEXT NOT NULL DEFAULT '',
   region TEXT NOT NULL,
   seed INTEGER,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

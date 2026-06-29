@@ -163,12 +163,16 @@
 
         <form method="post" action="/tournaments/<%= tournament.id %>/participants" class="grid-form compact">
           <label>
-            Roblox username
-            <input name="roblox_username" maxlength="50" placeholder="Roblox name" required>
+            Discord username
+            <input name="discord_username" maxlength="80" placeholder="Discord username" required>
           </label>
           <label>
-            Discord username
-            <input name="discord_username" maxlength="80" placeholder="Discord name" required>
+            Roblox username
+            <input name="roblox_username" maxlength="50" placeholder="Roblox username" required>
+          </label>
+          <label>
+            Roblox display name
+            <input name="roblox_display_name" maxlength="50" placeholder="Optional">
           </label>
           <label>
             Discord ID
@@ -191,8 +195,9 @@
           <div class="participant-table">
             <div class="participant-table-head">
               <span>Seed</span>
-              <span>Roblox</span>
               <span>Discord</span>
+              <span>Roblox username</span>
+              <span>Roblox display</span>
               <span>Region</span>
               <span>Actions</span>
             </div>
@@ -200,8 +205,9 @@
               <div class="participant-table-row">
                 <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>" class="participant-form challonge-participant-form">
                   <input name="seed" value="<%= participant.seed || '' %>" type="number" min="1" placeholder="Seed">
-                  <input name="roblox_username" value="<%= participant.roblox_username %>" maxlength="50" required>
                   <input name="discord_username" value="<%= participant.discord_username %>" maxlength="80" required>
+                  <input name="roblox_username" value="<%= participant.roblox_username %>" maxlength="50" required>
+                  <input name="roblox_display_name" value="<%= participant.roblox_display_name || '' %>" maxlength="50" placeholder="Display name">
                   <input name="region" value="<%= participant.region %>" maxlength="50" placeholder="Region">
                   <button type="submit">Save</button>
                 </form>

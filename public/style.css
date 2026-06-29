@@ -341,7 +341,7 @@ label {
 }
 
 .grid-form.compact {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   align-items: end;
 }
 
@@ -990,7 +990,7 @@ label {
 }
 
 .participant-table-head {
-  grid-template-columns: 0.55fr 1.2fr 1.2fr 0.75fr 128px;
+  grid-template-columns: 0.55fr 1.2fr 1.2fr 1.1fr 0.75fr 128px;
   padding: 0 0.75rem;
   color: var(--muted);
   font-size: 0.75rem;
@@ -1007,7 +1007,7 @@ label {
 }
 
 .challonge-participant-form {
-  grid-template-columns: 0.55fr 1.2fr 1.2fr 0.75fr auto;
+  grid-template-columns: 0.55fr 1.2fr 1.2fr 1.1fr 0.75fr auto;
 }
 
 .empty-state-large {
@@ -1280,7 +1280,7 @@ label {
 /* Compact left-to-right bracket using the dashboard's own visual style. */
 .challonge-bracket {
   --match-width: 190px;
-  --match-height: 66px;
+  --match-height: 96px;
   --connector: 36px;
   position: relative;
   display: grid;
@@ -1288,7 +1288,7 @@ label {
   column-gap: var(--connector);
   align-items: stretch;
   width: max-content;
-  min-height: max(560px, calc(var(--base-matches) * 58px));
+  min-height: max(560px, calc(var(--base-matches) * 84px));
   padding: 1rem 1.4rem 1.4rem;
 }
 
@@ -1338,7 +1338,7 @@ label {
 
 .challonge-player {
   grid-template-columns: minmax(0, 1fr) 42px;
-  min-height: 34px;
+  min-height: 42px;
   gap: 0.25rem;
   padding: 0.22rem;
   border: 1px solid rgba(39, 51, 79, 0.95);
@@ -1356,8 +1356,50 @@ label {
 }
 
 .challonge-player .player-name {
+  display: grid;
+  gap: 0.08rem;
   min-width: 0;
   padding: 0;
+}
+
+.challonge-player .player-line {
+  display: flex;
+  align-items: center;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.challonge-player .account-icon {
+  width: 0.72rem;
+  height: 0.72rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.challonge-player .account-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.challonge-player .discord-icon {
+  color: #a5b4fc;
+}
+
+.challonge-player .roblox-icon {
+  color: #d1d5db;
+}
+
+.challonge-player .player-name strong,
+.challonge-player .player-name small {
+  min-width: 0;
 }
 
 .challonge-player .player-name strong {
@@ -1367,7 +1409,7 @@ label {
 }
 
 .challonge-player .player-name small {
-  display: block;
+  display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -102,14 +102,42 @@ function datetimeLocalValue(value) {
 
 function participantLabel(participant) {
   if (!participant) return '';
-  const roblox = participant.roblox_username || participant.player_name || '';
-  const discord = participant.discord_username ? ` (${participant.discord_username})` : '';
-  return `${roblox}${discord}`.trim();
+  const roblox = robloxAccountLabel(participant.roblox_username, participant.roblox_display_name);
+  const discord = participant.discord_username || '';
+  if (discord && roblox) return `${discord} (${roblox})`;
+  return discord || roblox;
 }
 
 function shortParticipantLabel(participant) {
   if (!participant) return '';
-  return participant.roblox_username || participant.discord_username || '';
+  return participant.discord_username || participant.roblox_display_name || participant.roblox_username || '';
+}
+
+function robloxAccountLabel(username, displayName) {
+  const robloxUsername = String(username || '').trim();
+  const robloxDisplayName = String(displayName || '').trim();
+
+  if (
+    robloxDisplayName &&
+    robloxUsername &&
+    robloxDisplayName.toLowerCase() !== robloxUsername.toLowerCase()
+  ) {
+    return `${robloxDisplayName} (@${robloxUsername})`;
+  }
+
+  return robloxDisplayName || (robloxUsername ? `@${robloxUsername}` : '');
+}
+
+function accountTitle({ discordUsername, robloxUsername, robloxDisplayName, fallbackName }) {
+  const parts = [];
+  const discord = String(discordUsername || '').trim();
+  const roblox = robloxAccountLabel(robloxUsername, robloxDisplayName);
+
+  if (discord) parts.push(`Discord username: ${discord}`);
+  if (roblox) parts.push(`Roblox display name: ${roblox}`);
+  if (!parts.length && fallbackName) parts.push(fallbackName);
+
+  return parts.join(' | ');
 }
 
 function createPublicToken() {
@@ -249,9 +277,9 @@ async function loadParticipants(tournamentId) {
 async function loadMatches(tournamentId) {
   const result = await query(
     `SELECT m.*,
-       p1.roblox_username AS p1_roblox, p1.discord_username AS p1_discord, p1.seed AS p1_seed,
-       p2.roblox_username AS p2_roblox, p2.discord_username AS p2_discord, p2.seed AS p2_seed,
-       w.roblox_username AS winner_roblox, w.discord_username AS winner_discord, w.seed AS winner_seed
+       p1.roblox_username AS p1_roblox, p1.roblox_display_name AS p1_roblox_display, p1.discord_username AS p1_discord, p1.seed AS p1_seed,
+       p2.roblox_username AS p2_roblox, p2.roblox_display_name AS p2_roblox_display, p2.discord_username AS p2_discord, p2.seed AS p2_seed,
+       w.roblox_username AS winner_roblox, w.roblox_display_name AS winner_roblox_display, w.discord_username AS winner_discord, w.seed AS winner_seed
      FROM tournament_matches m
      LEFT JOIN tournament_participants p1 ON p1.id = m.player1_participant_id
      LEFT JOIN tournament_participants p2 ON p2.id = m.player2_participant_id
@@ -263,11 +291,29 @@ async function loadMatches(tournamentId) {
 
   return result.rows.map((match) => ({
     ...match,
-    player1_label: match.p1_roblox ? `${match.p1_roblox} (${match.p1_discord})` : match.player1_name,
-    player2_label: match.p2_roblox ? `${match.p2_roblox} (${match.p2_discord})` : match.player2_name,
-    player1_short: match.p1_roblox || match.player1_name || 'TBD',
-    player2_short: match.p2_roblox || match.player2_name || 'TBD',
-    winner_label: match.winner_roblox ? `${match.winner_roblox} (${match.winner_discord})` : '',
+    player1_label: accountTitle({
+      discordUsername: match.p1_discord,
+      robloxUsername: match.p1_roblox,
+      robloxDisplayName: match.p1_roblox_display,
+      fallbackName: match.player1_name,
+    }),
+    player2_label: accountTitle({
+      discordUsername: match.p2_discord,
+      robloxUsername: match.p2_roblox,
+      robloxDisplayName: match.p2_roblox_display,
+      fallbackName: match.player2_name,
+    }),
+    player1_short: match.p1_discord || match.player1_name || 'TBD',
+    player2_short: match.p2_discord || match.player2_name || 'TBD',
+    player1_roblox_label: robloxAccountLabel(match.p1_roblox, match.p1_roblox_display),
+    player2_roblox_label: robloxAccountLabel(match.p2_roblox, match.p2_roblox_display),
+    winner_label: match.winner_discord || match.winner_roblox || match.winner_roblox_display
+      ? participantLabel({
+          discord_username: match.winner_discord,
+          roblox_username: match.winner_roblox,
+          roblox_display_name: match.winner_roblox_display,
+        })
+      : '',
   }));
 }
 
@@ -816,12 +862,13 @@ app.post('/tournaments/:id/participants', requireAuth, async (req, res, next) =>
     const tournamentId = toInt(req.params.id);
     await query(
       `INSERT INTO tournament_participants
-        (tournament_id, discord_id, discord_username, roblox_username, region, seed)
-       VALUES ($1, $2, $3, $4, $5, $6)
+        (tournament_id, discord_id, discord_username, roblox_username, roblox_display_name, region, seed)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (tournament_id, discord_id)
        DO UPDATE SET
          discord_username = EXCLUDED.discord_username,
          roblox_username = EXCLUDED.roblox_username,
+         roblox_display_name = EXCLUDED.roblox_display_name,
          region = EXCLUDED.region,
          seed = EXCLUDED.seed,
          updated_at = NOW()`,
@@ -830,6 +877,7 @@ app.post('/tournaments/:id/participants', requireAuth, async (req, res, next) =>
         cleanText(req.body.discord_id, 80) || `manual-${Date.now()}`,
         cleanText(req.body.discord_username, 80) || 'Manual Player',
         cleanText(req.body.roblox_username, 50) || 'RobloxPlayer',
+        cleanText(req.body.roblox_display_name, 50),
         cleanText(req.body.region, 50),
         toInt(req.body.seed),
       ],
@@ -864,13 +912,15 @@ app.post('/tournaments/:id/participants/:participantId', requireAuth, async (req
       `UPDATE tournament_participants
        SET discord_username = $1,
            roblox_username = $2,
-           region = $3,
-           seed = $4,
+           roblox_display_name = $3,
+           region = $4,
+           seed = $5,
            updated_at = NOW()
-       WHERE id = $5 AND tournament_id = $6`,
+       WHERE id = $6 AND tournament_id = $7`,
       [
         cleanText(req.body.discord_username, 80),
         cleanText(req.body.roblox_username, 50),
+        cleanText(req.body.roblox_display_name, 50),
         cleanText(req.body.region, 50),
         toInt(req.body.seed),
         toInt(req.params.participantId),
