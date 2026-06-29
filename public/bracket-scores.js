@@ -1,6 +1,7 @@
 (function () {
   const timers = new WeakMap();
   const pendingForms = new WeakSet();
+  const queuedForms = new WeakSet();
 
   function scoreValue(input) {
     if (!input || input.value === '') return null;
@@ -83,14 +84,14 @@
     const currentBracket = document.getElementById('bracket-export');
     if (!currentBracket) return;
 
-    const response = await fetch(`${window.location.pathname}?bracket=${Date.now()}`, {
+    const response = await fetch(`${window.location.pathname}?partial=1&bracket=${Date.now()}`, {
       headers: {
         Accept: 'text/html',
         'X-Requested-With': 'fetch',
       },
     });
 
-    if (!response.ok) {
+    if (!response.ok || response.redirected) {
       throw new Error(`Bracket refresh failed with ${response.status}`);
     }
 
@@ -98,7 +99,9 @@
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const nextBracket = doc.getElementById('bracket-export');
 
-    if (!nextBracket) return;
+    if (!nextBracket) {
+      throw new Error('Bracket refresh did not return bracket markup.');
+    }
 
     currentBracket.innerHTML = nextBracket.innerHTML;
     currentBracket.style.setProperty('--rounds', nextBracket.style.getPropertyValue('--rounds'));
@@ -108,7 +111,10 @@
   }
 
   async function submitForm(form) {
-    if (pendingForms.has(form)) return;
+    if (pendingForms.has(form)) {
+      queuedForms.add(form);
+      return;
+    }
 
     pendingForms.add(form);
     form.classList.add('is-saving');
@@ -123,8 +129,16 @@
         body: new URLSearchParams(new FormData(form)),
       });
 
-      if (!response.ok) {
+      if (!response.ok || response.redirected) {
         throw new Error(`Score save failed with ${response.status}`);
+      }
+
+      if (queuedForms.has(form)) {
+        queuedForms.delete(form);
+        pendingForms.delete(form);
+        form.classList.remove('is-saving');
+        submitForm(form);
+        return;
       }
 
       await refreshBracket();

@@ -858,6 +858,11 @@ app.get('/tournaments/:id', requireAuth, async (req, res, next) => {
     const publicToken = await ensureTournamentPublicToken(tournament);
     const viewData = await buildTournamentViewData(tournament);
 
+    if (req.query.partial === '1') {
+      res.render('partials/bracket-board', { ...viewData, readOnly: false });
+      return;
+    }
+
     res.render('tournament', {
       ...viewData,
       liveBracketUrl: absoluteUrl(req, `/brackets/${publicToken}`),
