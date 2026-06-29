@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Poep123@@';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-before-hosting';
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || 'Europe/Amsterdam';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -88,7 +89,7 @@ function cleanMultiline(value, max = 2000) {
 
 function toDateOrNull(value) {
   if (!value) return null;
-  const date = new Date(value);
+  const date = parseDatetimeLocalInTimeZone(value, APP_TIME_ZONE);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -96,8 +97,64 @@ function datetimeLocalValue(value) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return offsetDate.toISOString().slice(0, 16);
+  return formatDatetimeLocalInTimeZone(date, APP_TIME_ZONE);
+}
+
+function formatDatetimeLocalInTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .formatToParts(date)
+    .reduce((values, part) => {
+      if (part.type !== 'literal') values[part.type] = part.value;
+      return values;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+function timeZoneOffsetMs(timeZone, date) {
+  const timeZoneName = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    timeZoneName: 'shortOffset',
+  })
+    .formatToParts(date)
+    .find((part) => part.type === 'timeZoneName')?.value;
+  const match = /^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/.exec(timeZoneName || '');
+
+  if (!match) return 0;
+
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2]);
+  const minutes = Number(match[3] || 0);
+  return sign * ((hours * 60 + minutes) * 60000);
+}
+
+function parseDatetimeLocalInTimeZone(value, timeZone) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(value || ''));
+
+  if (!match) {
+    return new Date(value);
+  }
+
+  const [, year, month, day, hour, minute] = match.map(Number);
+  const localAsUtc = Date.UTC(year, month - 1, day, hour, minute);
+  let offset = timeZoneOffsetMs(timeZone, new Date(localAsUtc));
+  let utc = localAsUtc - offset;
+  const correctedOffset = timeZoneOffsetMs(timeZone, new Date(utc));
+
+  if (correctedOffset !== offset) {
+    offset = correctedOffset;
+    utc = localAsUtc - offset;
+  }
+
+  return new Date(utc);
 }
 
 function participantLabel(participant) {
@@ -1078,16 +1135,24 @@ app.post('/tournaments/:id/matches/:matchId', requireAuth, async (req, res, next
       const p2 = await getParticipant(client, p2Id);
       const p1Name = p1 ? participantLabel(p1) : cleanText(req.body.player1_name, 100);
       const p2Name = p2 ? participantLabel(p2) : cleanText(req.body.player2_name, 100);
-      const score1 = toInt(req.body.score1);
-      const score2 = toInt(req.body.score2);
-      let winnerSlot = req.body.winner_slot || req.body.winner_override;
+      let score1 = toInt(req.body.score1);
+      let score2 = toInt(req.body.score2);
+      let winnerSlot = '';
       const action = cleanText(req.body.action, 30);
       const requestedStatus = cleanText(req.body.status, 30);
 
+      if (score1 !== null && score2 === null && cleanText(req.body.score2, 20) === '') {
+        score2 = 0;
+      } else if (score2 !== null && score1 === null && cleanText(req.body.score1, 20) === '') {
+        score1 = 0;
+      }
+
       if (action === 'clear') {
         winnerSlot = '';
-      } else if (!winnerSlot && score1 !== null && score2 !== null && score1 !== score2) {
+      } else if (score1 !== null && score2 !== null && score1 !== score2) {
         winnerSlot = score1 > score2 ? 'p1' : 'p2';
+      } else if (score1 === null && score2 === null) {
+        winnerSlot = cleanText(req.body.winner_slot || req.body.winner_override, 10);
       }
 
       const winnerId = winnerSlot === 'p1' ? p1Id : winnerSlot === 'p2' ? p2Id : null;
