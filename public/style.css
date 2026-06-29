@@ -1370,31 +1370,26 @@ label {
 }
 
 .challonge-player .account-icon {
-  width: 0.72rem;
-  height: 0.72rem;
-  display: inline-flex;
+  width: 0.78rem;
+  height: 0.78rem;
+  display: inline-block;
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
   opacity: 0.9;
-}
-
-.challonge-player .account-icon svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.9;
+  background: currentColor;
+  mask: center / contain no-repeat;
+  -webkit-mask: center / contain no-repeat;
 }
 
 .challonge-player .discord-icon {
-  color: #a5b4fc;
+  color: #c7d2fe;
+  mask-image: url("/icons/discord.svg");
+  -webkit-mask-image: url("/icons/discord.svg");
 }
 
 .challonge-player .roblox-icon {
-  color: #d1d5db;
+  color: #f8fafc;
+  mask-image: url("/icons/roblox.svg");
+  -webkit-mask-image: url("/icons/roblox.svg");
 }
 
 .challonge-player .player-name strong,
