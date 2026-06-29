@@ -3,26 +3,37 @@
   const p2Winner = match.winner_participant_id && match.winner_participant_id === match.player2_participant_id;
   const isReady = match.player1_participant_id && match.player2_participant_id && !match.winner_participant_id;
   const statusClass = match.winner_participant_id ? 'completed' : isReady ? 'running' : 'pending';
+  const isReadOnly = Boolean(readOnly);
 %>
+<% if (isReadOnly) { %>
+<div class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" data-round="<%= match.round_number %>" data-match="<%= match.match_number %>">
+<% } else { %>
 <form class="visual-match visual-match-<%= side %> <%= statusClass %>" id="match-<%= match.id %>" method="post" action="/tournaments/<%= tournament.id %>/matches/<%= match.id %>" data-round="<%= match.round_number %>" data-match="<%= match.match_number %>">
+<% } %>
   <div class="visual-match-meta">
     <span><%= matchTitle(match, finalRound) %></span>
   </div>
 
-  <input type="hidden" name="player1_participant_id" value="<%= match.player1_participant_id || '' %>">
-  <input type="hidden" name="player2_participant_id" value="<%= match.player2_participant_id || '' %>">
-  <input type="hidden" name="player1_name" value="<%= match.player1_name || '' %>">
-  <input type="hidden" name="player2_name" value="<%= match.player2_name || '' %>">
-  <input type="hidden" name="status" value="<%= match.status || '' %>">
-  <input type="hidden" name="winner_override" value="<%= p1Winner ? 'p1' : p2Winner ? 'p2' : '' %>">
-  <input type="hidden" name="action" value="score">
+  <% if (!isReadOnly) { %>
+    <input type="hidden" name="player1_participant_id" value="<%= match.player1_participant_id || '' %>">
+    <input type="hidden" name="player2_participant_id" value="<%= match.player2_participant_id || '' %>">
+    <input type="hidden" name="player1_name" value="<%= match.player1_name || '' %>">
+    <input type="hidden" name="player2_name" value="<%= match.player2_name || '' %>">
+    <input type="hidden" name="status" value="<%= match.status || '' %>">
+    <input type="hidden" name="winner_override" value="<%= p1Winner ? 'p1' : p2Winner ? 'p2' : '' %>">
+    <input type="hidden" name="action" value="score">
+  <% } %>
 
   <div class="challonge-player <%= p1Winner ? 'winner-slot' : '' %> <%= !match.player1_participant_id ? 'empty-slot' : '' %>">
     <div class="player-name" title="<%= match.player1_label || 'TBD' %>">
       <strong><%= match.player1_short || 'TBD' %></strong>
       <% if (match.p1_discord) { %><small><%= match.p1_discord %></small><% } %>
     </div>
-    <input class="score-input" name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="0" aria-label="Player 1 score">
+    <% if (isReadOnly) { %>
+      <span class="score-chip"><%= match.score1 ?? '' %></span>
+    <% } else { %>
+      <input class="score-input" name="score1" type="number" min="0" value="<%= match.score1 ?? '' %>" placeholder="0" aria-label="Player 1 score">
+    <% } %>
   </div>
 
   <div class="challonge-player <%= p2Winner ? 'winner-slot' : '' %> <%= !match.player2_participant_id ? 'empty-slot' : '' %>">
@@ -30,6 +41,14 @@
       <strong><%= match.player2_short || 'TBD' %></strong>
       <% if (match.p2_discord) { %><small><%= match.p2_discord %></small><% } %>
     </div>
-    <input class="score-input" name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="0" aria-label="Player 2 score">
+    <% if (isReadOnly) { %>
+      <span class="score-chip"><%= match.score2 ?? '' %></span>
+    <% } else { %>
+      <input class="score-input" name="score2" type="number" min="0" value="<%= match.score2 ?? '' %>" placeholder="0" aria-label="Player 2 score">
+    <% } %>
   </div>
+<% if (isReadOnly) { %>
+</div>
+<% } else { %>
 </form>
+<% } %>

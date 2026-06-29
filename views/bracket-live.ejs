@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= tournament.name %> - Live Bracket</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="public-bracket-page">
+  <main class="container wide">
+    <section class="hero split challonge-hero">
+      <div>
+        <p class="eyebrow">Live bracket</p>
+        <h1><%= tournament.name %></h1>
+        <p class="muted"><%= participants.length %><%= tournament.max_participants ? ' / ' + tournament.max_participants : '' %> players</p>
+      </div>
+      <div class="hero-actions">
+        <span class="pill"><%= displayTournamentStatus(tournament.status) %></span>
+        <span class="pill"><%= stats.completedMatches %> / <%= stats.totalMatches %> completed</span>
+      </div>
+    </section>
+
+    <section class="panel bracket-panel public-bracket-panel" id="live-bracket-root">
+      <%- include('partials/bracket-board', { tournament, participants, matches, rounds, stats, roundLabel, matchTitle, readOnly: true }) %>
+    </section>
+  </main>
+  <script src="/bracket-pan.js"></script>
+  <script src="/bracket-lines.js"></script>
+  <script src="/bracket-live.js"></script>
+</body>
+</html>

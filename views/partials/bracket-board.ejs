@@ -1,0 +1,41 @@
+<% if (matches.length === 0) { %>
+  <div class="empty-state-large">
+    <h3>No bracket yet</h3>
+    <p>Add at least 2 players, set seeds, then press <strong>Generate bracket</strong>.</p>
+  </div>
+<% } else { %>
+  <%
+    const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
+    const finalRound = roundNumbers[roundNumbers.length - 1];
+    const firstRoundMatchCount = Math.max(...roundNumbers.map((roundNumber) => (rounds[roundNumber] || []).length), 1);
+  %>
+
+  <div class="bracket-toolbar challonge-toolbar">
+    <div class="legend">
+      <span><i class="dot ready"></i> Ready</span>
+      <span><i class="dot done"></i> Done</span>
+      <span><i class="dot pending"></i> Waiting</span>
+    </div>
+    <% if (stats.champion) { %>
+      <span class="champion-pill">Champion: <strong><%= stats.champion %></strong></span>
+    <% } %>
+  </div>
+
+  <div class="bracket-viewport" id="bracket-viewport">
+    <div class="bracket-canvas" id="bracket-canvas">
+      <div id="bracket-export" class="playoff-bracket challonge-bracket" style="--rounds:<%= roundNumbers.length || 1 %>; --base-matches:<%= firstRoundMatchCount %>;">
+        <% roundNumbers.forEach((roundNumber, index) => { %>
+          <% const roundMatches = rounds[roundNumber] || []; %>
+          <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
+            <h3><%= roundLabel(roundNumber, finalRound) %></h3>
+            <div class="visual-round-stack">
+              <% roundMatches.forEach((match) => { %>
+                <%- include('bracket-match', { match, tournament, participants, side: 'forward', finalRound, matchTitle, readOnly }) %>
+              <% }) %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+<% } %>

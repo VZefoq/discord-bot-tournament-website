@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   rules TEXT NOT NULL DEFAULT '',
   prize TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'open',
+  public_token TEXT UNIQUE,
   max_participants INTEGER,
   default_region TEXT NOT NULL DEFAULT '',
   signup_closes_at TIMESTAMPTZ,

@@ -72,183 +72,150 @@
       <% } %>
     </section>
 
-    <section class="panel">
-      <div class="section-title">
-        <h2>Settings</h2>
-        <span class="pill" id="settings-save-state">Live save ready</span>
-      </div>
-      <form method="post" action="/tournaments/<%= tournament.id %>/details" class="grid-form" id="settings-form" data-live-save="true">
-        <label>
-          Name
-          <input name="name" value="<%= tournament.name %>" required maxlength="100">
-        </label>
-        <label>
-          Status
-          <select name="status">
-            <% [
-              ['open', 'Open'],
-              ['ongoing', 'Ongoing'],
-              ['ended', 'Ended'],
-            ].forEach(([status, label]) => { %>
-              <option value="<%= status %>" <%= normalizeTournamentStatus(tournament.status) === status ? 'selected' : '' %>><%= label %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label>
-          Tournament starts
-          <input name="signup_closes_at" type="datetime-local" value="<%= datetimeLocalValue(tournament.signup_closes_at) %>">
-        </label>
-        <label>
-          Max players
-          <input name="max_participants" type="number" min="2" max="256" value="<%= tournament.max_participants || '' %>">
-        </label>
-        <label>
-          Default region
-          <input name="default_region" value="<%= tournament.default_region || '' %>" maxlength="50">
-        </label>
-        <label class="full">
-          Prize
-          <textarea name="prize" rows="2" maxlength="500"><%= tournament.prize || '' %></textarea>
-        </label>
-        <label class="full">
-          Description
-          <textarea name="description" rows="4" maxlength="1000"><%= tournament.description || '' %></textarea>
-        </label>
-        <label class="full">
-          Rules
-          <textarea name="rules" rows="5" maxlength="1000"><%= tournament.rules || '' %></textarea>
-        </label>
-        <button class="primary" type="submit">Save settings</button>
-      </form>
-    </section>
+    <section class="panel tournament-tabs-panel">
+      <nav class="tournament-tabs" aria-label="Tournament sections">
+        <a href="#settings" data-tab-link="settings">Settings</a>
+        <a href="#participants" data-tab-link="participants">Participants & seeds</a>
+        <a href="#bracket" data-tab-link="bracket">Bracket</a>
+      </nav>
 
-    <section class="panel" id="participants">
-      <div class="section-title wrap-title">
-        <div>
-          <h2>Participants & seeds</h2>
-          <p class="muted compact-note">Seed players first, then start or rebuild the bracket. Seed 1 and seed 2 are placed on opposite sides.</p>
+      <section class="tab-panel" id="settings" data-tab-panel="settings">
+        <div class="section-title">
+          <h2>Settings</h2>
+          <span class="pill" id="settings-save-state">Live save ready</span>
         </div>
-        <div class="small-actions">
-          <form method="post" action="/tournaments/<%= tournament.id %>/seed-sequential">
-            <button type="submit">Auto seed</button>
-          </form>
-          <form method="post" action="/tournaments/<%= tournament.id %>/shuffle-seeds" onsubmit="return confirm('Randomize all seeds?')">
-            <button type="submit">Shuffle seeds</button>
-          </form>
-        </div>
-      </div>
-
-      <form method="post" action="/tournaments/<%= tournament.id %>/participants" class="grid-form compact">
-        <label>
-          Roblox username
-          <input name="roblox_username" maxlength="50" placeholder="Roblox name" required>
-        </label>
-        <label>
-          Discord username
-          <input name="discord_username" maxlength="80" placeholder="Discord name" required>
-        </label>
-        <label>
-          Discord ID
-          <input name="discord_id" maxlength="80" placeholder="Optional">
-        </label>
-        <label>
-          Region
-          <input name="region" maxlength="50" placeholder="EU">
-        </label>
-        <label>
-          Seed
-          <input name="seed" type="number" min="1" placeholder="1">
-        </label>
-        <button class="primary" type="submit">Add player</button>
-      </form>
-
-      <% if (participants.length === 0) { %>
-        <p class="empty">No players yet. Players can join from Discord using the Join button.</p>
-      <% } else { %>
-        <div class="participant-table">
-          <div class="participant-table-head">
-            <span>Seed</span>
-            <span>Roblox</span>
-            <span>Discord</span>
-            <span>Region</span>
-            <span>Actions</span>
-          </div>
-          <% participants.forEach((participant) => { %>
-            <div class="participant-table-row">
-              <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>" class="participant-form challonge-participant-form">
-                <input name="seed" value="<%= participant.seed || '' %>" type="number" min="1" placeholder="Seed">
-                <input name="roblox_username" value="<%= participant.roblox_username %>" maxlength="50" required>
-                <input name="discord_username" value="<%= participant.discord_username %>" maxlength="80" required>
-                <input name="region" value="<%= participant.region %>" maxlength="50" placeholder="Region">
-                <button type="submit">Save</button>
-              </form>
-              <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>/delete" onsubmit="return confirm('Delete this participant?')">
-                <button class="danger" type="submit">Delete</button>
-              </form>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-    </section>
-
-    <section class="panel bracket-panel" id="bracket">
-      <div class="section-title wrap-title">
-        <div>
-          <h2>Bracket</h2>
-          <p class="muted compact-note">Report scores directly on a match. Clicking a winner moves them forward and clears invalid future results when you change or undo something.</p>
-        </div>
-        <div class="small-actions">
-          <% if (matches.length) { %>
-            <button type="button" id="download-bracket" data-filename="<%= tournament.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'tournament' %>-bracket.png">Download bracket</button>
-          <% } %>
-          <span class="pill"><%= stats.completedMatches %> / <%= stats.totalMatches %> completed</span>
-        </div>
-      </div>
-
-      <% if (matches.length === 0) { %>
-        <div class="empty-state-large">
-          <h3>No bracket yet</h3>
-          <p>Add at least 2 players, set seeds, then press <strong>Generate bracket</strong>.</p>
-        </div>
-      <% } else { %>
-        <%
-          const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
-          const finalRound = roundNumbers[roundNumbers.length - 1];
-          const firstRoundMatchCount = Math.max(...roundNumbers.map((roundNumber) => (rounds[roundNumber] || []).length), 1);
-        %>
-
-        <div class="bracket-toolbar challonge-toolbar">
-          <div class="legend">
-            <span><i class="dot ready"></i> Ready</span>
-            <span><i class="dot done"></i> Done</span>
-            <span><i class="dot pending"></i> Waiting</span>
-          </div>
-          <% if (stats.champion) { %>
-            <span class="champion-pill">Champion: <strong><%= stats.champion %></strong></span>
-          <% } %>
-        </div>
-
-        <div class="bracket-viewport" id="bracket-viewport">
-          <div class="bracket-canvas" id="bracket-canvas">
-            <div id="bracket-export" class="playoff-bracket challonge-bracket" style="--rounds:<%= roundNumbers.length || 1 %>; --base-matches:<%= firstRoundMatchCount %>;">
-              <% roundNumbers.forEach((roundNumber, index) => { %>
-                <% const roundMatches = rounds[roundNumber] || []; %>
-                <div class="visual-round" style="--round-index:<%= index %>; --match-count:<%= roundMatches.length || 1 %>;">
-                  <h3><%= roundLabel(roundNumber, finalRound) %></h3>
-                  <div class="visual-round-stack">
-                    <% roundMatches.forEach((match) => { %>
-                      <%- include('partials/bracket-match', { match, tournament, participants, side: 'forward', finalRound, matchTitle }) %>
-                    <% }) %>
-                  </div>
-                </div>
+        <form method="post" action="/tournaments/<%= tournament.id %>/details" class="grid-form" id="settings-form" data-live-save="true">
+          <label>
+            Name
+            <input name="name" value="<%= tournament.name %>" required maxlength="100">
+          </label>
+          <label>
+            Status
+            <select name="status">
+              <% [
+                ['open', 'Open'],
+                ['ongoing', 'Ongoing'],
+                ['ended', 'Ended'],
+              ].forEach(([status, label]) => { %>
+                <option value="<%= status %>" <%= normalizeTournamentStatus(tournament.status) === status ? 'selected' : '' %>><%= label %></option>
               <% }) %>
-            </div>
+            </select>
+          </label>
+          <label>
+            Tournament starts
+            <input name="signup_closes_at" type="datetime-local" value="<%= datetimeLocalValue(tournament.signup_closes_at) %>">
+          </label>
+          <label>
+            Max players
+            <input name="max_participants" type="number" min="2" max="256" value="<%= tournament.max_participants || '' %>">
+          </label>
+          <label>
+            Default region
+            <input name="default_region" value="<%= tournament.default_region || '' %>" maxlength="50">
+          </label>
+          <label class="full">
+            Prize
+            <textarea name="prize" rows="2" maxlength="500"><%= tournament.prize || '' %></textarea>
+          </label>
+          <label class="full">
+            Description
+            <textarea name="description" rows="4" maxlength="1000"><%= tournament.description || '' %></textarea>
+          </label>
+          <label class="full">
+            Rules
+            <textarea name="rules" rows="5" maxlength="1000"><%= tournament.rules || '' %></textarea>
+          </label>
+          <button class="primary" type="submit">Save settings</button>
+        </form>
+      </section>
+
+      <section class="tab-panel" id="participants" data-tab-panel="participants">
+        <div class="section-title wrap-title">
+          <div>
+            <h2>Participants & seeds</h2>
+            <p class="muted compact-note">Seed players first, then start or rebuild the bracket. Seed 1 and seed 2 are placed on opposite sides.</p>
+          </div>
+          <div class="small-actions">
+            <form method="post" action="/tournaments/<%= tournament.id %>/seed-sequential">
+              <button type="submit">Auto seed</button>
+            </form>
+            <form method="post" action="/tournaments/<%= tournament.id %>/shuffle-seeds" onsubmit="return confirm('Randomize all seeds?')">
+              <button type="submit">Shuffle seeds</button>
+            </form>
           </div>
         </div>
-      <% } %>
+
+        <form method="post" action="/tournaments/<%= tournament.id %>/participants" class="grid-form compact">
+          <label>
+            Roblox username
+            <input name="roblox_username" maxlength="50" placeholder="Roblox name" required>
+          </label>
+          <label>
+            Discord username
+            <input name="discord_username" maxlength="80" placeholder="Discord name" required>
+          </label>
+          <label>
+            Discord ID
+            <input name="discord_id" maxlength="80" placeholder="Optional">
+          </label>
+          <label>
+            Region
+            <input name="region" maxlength="50" placeholder="EU">
+          </label>
+          <label>
+            Seed
+            <input name="seed" type="number" min="1" placeholder="1">
+          </label>
+          <button class="primary" type="submit">Add player</button>
+        </form>
+
+        <% if (participants.length === 0) { %>
+          <p class="empty">No players yet. Players can join from Discord using the Join button.</p>
+        <% } else { %>
+          <div class="participant-table">
+            <div class="participant-table-head">
+              <span>Seed</span>
+              <span>Roblox</span>
+              <span>Discord</span>
+              <span>Region</span>
+              <span>Actions</span>
+            </div>
+            <% participants.forEach((participant) => { %>
+              <div class="participant-table-row">
+                <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>" class="participant-form challonge-participant-form">
+                  <input name="seed" value="<%= participant.seed || '' %>" type="number" min="1" placeholder="Seed">
+                  <input name="roblox_username" value="<%= participant.roblox_username %>" maxlength="50" required>
+                  <input name="discord_username" value="<%= participant.discord_username %>" maxlength="80" required>
+                  <input name="region" value="<%= participant.region %>" maxlength="50" placeholder="Region">
+                  <button type="submit">Save</button>
+                </form>
+                <form method="post" action="/tournaments/<%= tournament.id %>/participants/<%= participant.id %>/delete" onsubmit="return confirm('Delete this participant?')">
+                  <button class="danger" type="submit">Delete</button>
+                </form>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="tab-panel bracket-panel" id="bracket" data-tab-panel="bracket">
+        <div class="section-title wrap-title">
+          <div>
+            <h2>Bracket</h2>
+            <p class="muted compact-note">Report scores directly on a match. The winner advances automatically from the entered scores.</p>
+          </div>
+          <div class="small-actions live-link-actions">
+            <a class="button-link" href="<%= liveBracketUrl %>" target="_blank" rel="noopener">Open live bracket</a>
+            <button type="button" data-copy-link="<%= liveBracketUrl %>">Copy live link</button>
+            <span class="pill"><%= stats.completedMatches %> / <%= stats.totalMatches %> completed</span>
+          </div>
+        </div>
+        <input class="live-link-input" value="<%= liveBracketUrl %>" readonly aria-label="Live bracket link">
+        <%- include('partials/bracket-board', { tournament, participants, matches, rounds, stats, roundLabel, matchTitle, readOnly: false }) %>
+      </section>
     </section>
   </main>
-  <script src="/bracket-download.js"></script>
+  <script src="/tournament-tabs.js"></script>
   <script src="/bracket-pan.js"></script>
   <script src="/bracket-lines.js"></script>
   <script src="/bracket-scores.js"></script>
