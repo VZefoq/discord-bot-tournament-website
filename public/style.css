@@ -976,6 +976,15 @@ label {
   margin: 1rem 1rem 0;
 }
 
+.public-bracket-page .container {
+  padding-bottom: 1rem;
+}
+
+.public-bracket-page .bracket-viewport {
+  height: max(640px, calc(100vh - 190px));
+  min-height: 640px;
+}
+
 .participant-table {
   display: grid;
   gap: 0.55rem;
