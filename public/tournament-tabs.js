@@ -8,7 +8,7 @@
 
   function currentTab() {
     const hash = window.location.hash.replace('#', '');
-    return validTabs.has(hash) ? hash : 'settings';
+    return validTabs.has(hash) ? hash : 'bracket';
   }
 
   function activate(tabName) {
